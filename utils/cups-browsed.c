@@ -9875,7 +9875,7 @@ update_netifs (gpointer data)
 	  sizeof(list))
       {
 	snprintf(l, sizeof(list) - strlen(list) - 1,
-		 "%s", ifa->ifa_name);
+		 "%.65534s", ifa->ifa_name);
 	l = list + strlen(list);
 	if_found = 1;
       }
