@@ -271,9 +271,9 @@ AC_CHECK_HEADERS([sys/ioctl.h])
 AC_CHECK_HEADER(string.h,AC_DEFINE(HAVE_STRING_H))
 AC_CHECK_HEADER(strings.h,AC_DEFINE(HAVE_STRINGS_H))
 
-# ==================================
-# Check for modules needed by utils/
-# ==================================
+# ========================================
+# Check for modules needed by cups-browsed
+# ========================================
 
 dnl Avahi for cups-browsed
 AVAHI_LIBS=""
@@ -473,8 +473,8 @@ CXXFLAGS="$CXXFLAGS -D_GNU_SOURCE"
 # =====================
 AC_CONFIG_FILES([
 	Makefile
-	utils/cups-browsed
-	utils/cups-browsed.conf
+	daemon/cups-browsed
+	daemon/cups-browsed.conf
 ])
 AC_OUTPUT
 

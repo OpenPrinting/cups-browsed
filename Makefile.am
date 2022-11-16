@@ -15,8 +15,8 @@ EXTRA_DIST = \
 	$(doc_DATA) \
 	autogen.sh \
 	config.rpath \
-	utils/cups-browsed.service \
-	utils/cups-browsed-upstart.conf
+	daemon/cups-browsed.service \
+	daemon/cups-browsed-upstart.conf
 
 # =========
 # utilities
@@ -47,27 +47,27 @@ implicitclass_CFLAGS = \
 # ===========
 pkgcupsserverrootdir = $(CUPS_SERVERROOT)
 pkgcupsserverroot_DATA = \
-	utils/cups-browsed.conf
+	daemon/cups-browsed.conf
 
-# =====
-# UTILS
-# =====
+# ============
+# cups-browsed
+# ============
 
 cups_notifier_sources = \
 	cups-notifier.c \
 	cups-notifier.h
 
-$(cups_notifier_sources): utils/org.cups.cupsd.Notifier.xml
+$(cups_notifier_sources): daemon/org.cups.cupsd.Notifier.xml
 	gdbus-codegen \
 	    --interface-prefix org.cups.cupsd \
 	    --c-namespace Cups \
 	    --generate-c-code cups-notifier \
-	    utils/org.cups.cupsd.Notifier.xml
+	    daemon/org.cups.cupsd.Notifier.xml
 
 sbin_PROGRAMS = \
 	cups-browsed
 cups_browsed_SOURCES = \
-	utils/cups-browsed.c
+	daemon/cups-browsed.c
 nodist_cups_browsed_SOURCES = \
 	$(cups_notifier_sources)
 cups_browsed_CFLAGS = \
@@ -90,16 +90,16 @@ cups_browsed_LDADD = \
 	$(GIO_LIBS) \
 	$(GIO_UNIX_LIBS)
 initrcdir = $(INITDDIR)
-initrc_SCRIPTS = utils/cups-browsed
+initrc_SCRIPTS = daemon/cups-browsed
 
 cupsbrowsedmanpages = \
-	utils/cups-browsed.8 \
-	utils/cups-browsed.conf.5
+	daemon/cups-browsed.8 \
+	daemon/cups-browsed.conf.5
 man_MANS = $(cupsbrowsedmanpages)
 
-EXTRA_DIST += utils/cups-browsed.in \
+EXTRA_DIST += daemon/cups-browsed.in \
 	$(cupsbrowsedmanpages) \
-	utils/org.cups.cupsd.Notifier.xml
+	daemon/org.cups.cupsd.Notifier.xml
 BUILT_SOURCES = $(cups_notifier_sources)
 CLEANFILES = $(BUILT_SOURCES) $(GENERATED_DEFS)
 
