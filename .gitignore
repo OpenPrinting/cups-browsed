@@ -54,8 +54,8 @@ filter/braille/filters/vectortobrf
 filter/braille/filters/vectortopdf
 filter/foomatic-rip/foomatic-rip.1
 mime/cupsfilters.convs
-utils/cups-browsed
-utils/cups-browsed.conf
+daemon/cups-browsed
+daemon/cups-browsed.conf
 cups-notifier.c
 cups-notifier.h
 beh
@@ -145,5 +145,4 @@ m4/wint_t.m4
 m4/xsize.m4
 ppd/.dirstamp
 rastertopclm
-utils/.dirstamp
-utils/driverless-fax
+daemon/.dirstamp
