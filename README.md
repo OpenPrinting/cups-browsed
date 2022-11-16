@@ -1,4 +1,4 @@
-# OpenPrinting CUPS Filters v2.0b1 - 2020-11-14
+# OpenPrinting cups-browsed v2.0b1 - 2020-11-14
 
 Looking for compile instructions?  Read the file "INSTALL"
 instead...
