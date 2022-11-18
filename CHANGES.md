@@ -1,6 +1,6 @@
-# CHANGES - OpenPrinting cups-browsed v2.0b1 - 2022-11-14
+# CHANGES - OpenPrinting cups-browsed v2.0b1 - 2022-11-18
 
-## CHANGES IN V2.0b1 (TBA)
+## CHANGES IN V2.0b1 (18th November 2022)
 
 - Added multi-threaded operation, the Avahi resolver callback (which
   examines the remote printer, registers it, checks whether we want a
@@ -9,15 +9,14 @@
   threads, so that these processes can get executed in parallel to
   keep the local queues up-to-date more timely and to not overload the
   system's resources.  Thanks a lot to Mohit Mohan who did this work
-  as Google Summer of Code 2020 project
-  (https://github.com/mohitmo/GSoC-2020-Documentation).
+  as
+  [Google Summer of Code 2020 project](https://github.com/mohitmo/GSoC-2020-Documentation).
 
 - Let the implicitclass backend use filter functions instead of
   calling filter executables.
 
-- Build system, README.md: Require CUPS 2.2.2+ and QPDF 10.3.2+.
-  Removed now unneeded ./configure switches for PCLm support in QPDF
-  and for use of the urftopdf filter for old CUPS versions.
+- Build system, README.md: Require CUPS 2.2.2+. Removed now unneeded
+  ./configure switches for old CUPS versions.
 
 - Build system: Remove '-D_PPD_DEPRECATED=""' from the compiling
   command lines of the source files which use libcups. The flag is not
