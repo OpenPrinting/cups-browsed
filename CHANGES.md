@@ -1,5 +1,10 @@
 # CHANGES - OpenPrinting cups-browsed v2.0b1 - 2022-11-18
 
+## CHANGES IN V2.0b2 (TBA)
+
+- configure.ac: Added "foreign" to to AM_INIT_AUTOMAKE() call. Makes
+  automake not require a file named README.
+
 ## CHANGES IN V2.0b1 (18th November 2022)
 
 - Added multi-threaded operation, the Avahi resolver callback (which
