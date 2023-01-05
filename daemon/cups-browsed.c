@@ -1,7 +1,8 @@
 //
-// This file is part of cups-filters.
+// This file is part of cups-browsed.
 //
-// Copyright 2012-2021 Till Kamppeter
+// Copyright 2011-2022 OpenPrinting
+// Copyright 2011-2022 Till Kamppeter
 // Copyright 2013-2015 Tim Waugh
 // Copyright 2018-2019 Deepak Patankar
 // Copyright 2020 Mohit Mohan
@@ -13646,7 +13647,7 @@ main(int argc, char*argv[])
       }
   }
 
-  debug_printf("cups-browsed of cups-filters version "VERSION" starting.\n");
+  debug_printf("cups-browsed version "VERSION" starting.\n");
   
   // Read in cups-browsed.conf
   read_configuration (alt_config_file);
@@ -14112,7 +14113,7 @@ fail:
  help:
 
   fprintf(stderr,
-	  "cups-browsed of cups-filters version "VERSION"\n\n"
+	  "cups-browsed version "VERSION"\n\n"
 	  "Usage: cups-browsed [options]\n"
 	  "Options:\n"
 	  "  -c cups-browsed.conf    Set alternative cups-browsed.conf file to use.\n"

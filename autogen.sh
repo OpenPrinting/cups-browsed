@@ -38,7 +38,7 @@ for i in $TESTLIBTOOLIZE; do
 done
 
 if [ "$LIBTOOLIZEFOUND" = "0" ]; then
-	echo "$0: need libtoolize tool to build cups-filters" >&2
+	echo "$0: need libtoolize tool to build cups-browsed" >&2
 	exit 1
 fi
 

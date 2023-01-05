@@ -1,8 +1,8 @@
-Developing for CUPS FILTERS
+Developing for cups-browsed
 ===========================
 
 Please see the [Contributing to CUPS](CONTRIBUTING.md) file for information on
-contributing to the CUPS project.
+contributing to the cups-browsed project.
 
 
 How To Contact The Developers
@@ -14,39 +14,21 @@ the OpenPrinting developers.  To subscribe or see the mailing list archives, go
 to <https://lists.linuxfoundation.org/mailman/listinfo/printing-architecture>.
 
 
-Interfaces
-----------
-
-CUPS Filters interfaces, including the C APIs and command-line arguments,
-environment variables, configuration files, and output format, are stable
-across patch versions and are generally backwards-compatible with interfaces
-used in prior major and minor versions.
-
-CUPS Filters C APIs starting with an underscore (`_`) are considered to be
-private to the library and are not subject to the normal guarantees of
-stability between CUPS releases and must never be used in source code outside
-this library. Similarly, configuration and state files written by CUPS Filters
-are considered private if a corresponding man page is not provided with the
-CUPS Filters release.  Never rely on undocumented files or formats when
-developing software for CUPS Filters.  Always use a published C API to access
-data stored in a file to avoid compatibility problems in the future.
-
-
 Build System
 ------------
 
-The CUPS Filters build system uses GNU autoconf, automake, and libtool to
+The cups-browsed build system uses GNU autoconf, automake, and libtool to
 tailor the software to the local operating system.
 
 
 Version Numbering
 -----------------
 
-CUPS Filters uses a three-part version number separated by periods to represent
+cups-browsed uses a three-part version number separated by periods to represent
 the major, minor, and patch release numbers.  Major release numbers indicate
-large design changes or backwards-incompatible changes to the CUPS Filters API.
+large design changes or backwards-incompatible changes to the cups-browsed API.
 Minor release numbers indicate new features and other smaller changes which are
-backwards-compatible with previous CUPS Filters releases.  Patch numbers
+backwards-compatible with previous cups-browsed releases.  Patch numbers
 indicate bug fixes to the previous feature or patch release.  This version
 numbering scheme is consistent with the
 [Semantic Versioning](http://semver.org) specification.
@@ -127,15 +109,6 @@ the source file and the copyright and licensing notice:
      * Licensed under Apache License v2.0.  See the file "LICENSE" for more
      * information.
      */
-
-
-### Header Files
-
-Private API header files must be named with the suffix "-private", for example
-the "xxx.h" header file defines all of the public APIs while the
-"xxx-private.h" header file defines all of the private APIs as well.
-Typically a private API header file will include the corresponding public API
-header file.
 
 
 ### Comments

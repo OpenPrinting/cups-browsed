@@ -1,7 +1,7 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: cups-filters
+Upstream-Name: cups-browsed
 Upstream-Contact: OpenPrinting <printing-architecture@lists.linux-foundation.org>
-Source: http://www.openprinting.org/download/cups-filters/
+Source: http://www.openprinting.org/download/cups-browsed/
 
 Files: *
 Copyright: 2011-2022 OpenPrinting
