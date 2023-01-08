@@ -2,8 +2,20 @@
 
 ## CHANGES IN V2.0b2 (TBA)
 
+- cups-browsed is not part of cups-filters any more. Reflect this in
+  screen messages and comments in cups-browsed.c.
+
+- Makefile.am: Include NOTICE in distribution tarball
+
 - configure.ac: Added "foreign" to to AM_INIT_AUTOMAKE() call. Makes
   automake not require a file named README.
+
+- Cleaned up .gitignore
+
+- Tons of fixes in the source code documentation: README.md, INSTALL,
+  DEVELOPING.md, CONTRIBUTING.md, COPYING, NOTICE, ... Adapted to the
+  libcupsfilters component, added links.
+
 
 ## CHANGES IN V2.0b1 (18th November 2022)
 
