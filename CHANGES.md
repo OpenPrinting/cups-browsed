@@ -1,6 +1,6 @@
-# CHANGES - OpenPrinting cups-browsed v2.0b1 - 2022-11-18
+# CHANGES - OpenPrinting cups-browsed v2.0b2 - 2023-01-08
 
-## CHANGES IN V2.0b2 (TBA)
+## CHANGES IN V2.0b2 (8th January 2023)
 
 - cups-browsed is not part of cups-filters any more. Reflect this in
   screen messages and comments in cups-browsed.c.
