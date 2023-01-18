@@ -5,37 +5,12 @@ Source: http://www.openprinting.org/download/cups-browsed/
 
 Files: *
 Copyright: 2011-2022 OpenPrinting
- 1993-2007 Easy Software Products
- 2003-2015 Tim Waugh
- 2003-2006 Red Hat, Inc.
- 2006-2012 BBR Inc.
- 2007-2019 Apple Inc.
- 2008-2022 Till Kamppeter
- 2008-2012 Tobias Hoffmann
- 2008 Lars Karlitski (formerly Übernickel)
- 2010 Neil 'Superna' Armstrong
- 2011-2013 Richard Hughes
- 2012 Canonical Ltd.
- 2012 Franz Pförtsch
- 2012 Tomáš Chvátal
- 2013 ALT Linux, Andrew V. Stepanov
- 2014 Joseph Simon
- 2015-2022 Samuel Thibault
- 2016 Pranjal Bhor
- 2017-2018 Sahil Arora
+ 1996-2023 Free Software Foundation, Inc.
+ 2011-2022 Till Kamppeter
+ 2013-2015 Tim Waugh
  2018-2019 Deepak Patankar
- 2019 Tanmay Anand
  2020 Mohit Mohan
- 2021 Suraj Kulriya
- 2021 Pratyush Ranjan
- 2021 Pranshu Kharkwal
- 2022 Chandresh Soni
- 2022 Sachin Thakan
 Licence: Apache-2.0-with-GPL2-LGPL2-Exception
-
-Files: ltmain.sh
-Copyright: 1996-2001, 2003-2011 Free Software Foundation, Inc.
-License: GPL-2+
 
 License: Apache-2.0-with-GPL2-LGPL2-Exception
  Licensed under the Apache License, Version 2.0 (the "License");
@@ -64,13 +39,3 @@ License: Apache-2.0-with-GPL2-LGPL2-Exception
  prospectively choose to deem waived or otherwise exclude such Section(s) of
  the License, but only in their entirety and only with respect to the Combined
  Software.
-
-License: GPL-2+
- This program is free software; you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation; version 2 dated June, 1991, or (at
- your option) any later version.
- .
- On Debian systems, the complete text of version 2 of the GNU General
- Public License can be found in '/usr/share/common-licenses/GPL-2'.
-
