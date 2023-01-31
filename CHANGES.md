@@ -1,5 +1,15 @@
 # CHANGES - OpenPrinting cups-browsed v2.0b2 - 2023-01-08
 
+## CHANGES IN V2.0b3 (31st January 2023)
+
+- COPYING, NOTICE: Simplification for autotools-generated files
+  autotools-generated files can be included under the license of the
+  upstream code, and FSF copyright added to upstream copyright
+  list. Simplified COPYING appropriately.
+
+- Makefile.am: Include LICENSE in distribution tarball
+
+
 ## CHANGES IN V2.0b2 (8th January 2023)
 
 - cups-browsed is not part of cups-filters any more. Reflect this in
