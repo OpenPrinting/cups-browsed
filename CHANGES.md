@@ -1,4 +1,4 @@
-# CHANGES - OpenPrinting cups-browsed v2.0b2 - 2023-01-08
+# CHANGES - OpenPrinting cups-browsed v2.0b3 - 2023-01-31
 
 ## CHANGES IN V2.0b3 (31st January 2023)
 
