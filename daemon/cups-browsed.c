@@ -673,6 +673,8 @@ copyToFile(FILE **fp1,
     fwrite(buf, sizeof(char), r, *fp2);
   }
   while(r == buffer_size);
+
+  free(buf);
 }
 
 
@@ -2056,7 +2058,10 @@ get_pagesize(ipp_t *printer_attributes)
   if ((page_media = cupsArrayNew3((cups_array_func_t)strcasecmp, NULL, NULL, 0,
 				  (cups_acopy_func_t)strdup,
 				  (cups_afree_func_t)free)) == NULL)
+  {
+    free(ppdsizename);
     return (NULL);
+  }
   for (size = (cups_size_t *)cupsArrayFirst(sizes); size;
        size = (cups_size_t *)cupsArrayNext(sizes))
   {
@@ -2809,7 +2814,10 @@ generate_cluster_conflicts(char *cluster_name,
 				      NULL, NULL, 0,
 				      (cups_acopy_func_t)strdup,
 				      (cups_afree_func_t)free)) == NULL)
+  {
+    free(ppdsizename);
     return (NULL);
+  }
 
   // Storing all the values supported by the cluster in cluster_options
   no_of_ppd_keywords = sizeof(ppd_keywords) / sizeof(ppd_keywords[0]);
@@ -2827,7 +2835,10 @@ generate_cluster_conflicts(char *cluster_name,
 	   cupsArrayNew3((cups_array_func_t)strcasecmp, NULL, NULL, 0,
 			 (cups_acopy_func_t)strdup,
 			 (cups_afree_func_t)free)) == NULL)
+      {
+	free(ppdsizename);
 	return (NULL);
+      }
       for (size = (cups_size_t *)cupsArrayFirst(sizes); size;
 	   size = (cups_size_t *)cupsArrayNext(sizes))
       {
@@ -4151,6 +4162,7 @@ prepare_browse_data (void)
   ipp_t *request, *response = NULL;
   ipp_attribute_t *attr;
   http_t *conn = NULL;
+  GString *browse_options = NULL;
 
   conn = http_connect_local ();
 
@@ -4186,7 +4198,7 @@ prepare_browse_data (void)
     gchar *location = NULL;
     gchar *info = NULL;
     gchar *make_model = NULL;
-    GString *browse_options = g_string_new ("");
+    browse_options = g_string_new ("");
 
     // Skip any non-printer attributes
     while (attr && ippGetGroupTag(attr) != IPP_TAG_PRINTER)
@@ -4319,13 +4331,18 @@ prepare_browse_data (void)
       g_free (location);
 
     if (browse_options)
+    {
       g_string_free (browse_options, TRUE);
+      browse_options = NULL;
+    }
 
     if (!attr)
       break;
   }
 
  fail:
+  if (browse_options)
+    g_string_free(browse_options, TRUE);
   if (response)
     ippDelete(response);
 }
@@ -5759,7 +5776,9 @@ retrieve_default_printer(int local)
     return (NULL);
   }
   p = buf;
-  n = fscanf(fp, "%s", p);
+  n = fscanf(fp, "%1023s", p);
+  buf[1023] = '\0';
+
   if (n == 1)
   {
     if (strlen(p) > 0)
@@ -6314,6 +6333,8 @@ get_local_queue_name(const char *service_name,
   }
   if (cluster)
   {
+    if (local_queue_name)
+      free(local_queue_name);
     local_queue_name = strdup(cluster->local_queue_name);
     *is_cups_queue = 2;
     free(str);
@@ -7685,6 +7706,22 @@ create_remote_printer_entry (const char *queue_name,
   if (p->ipp_discoveries == NULL)
   {
     debug_printf("ERROR: Unable to allocate memory.\n");
+    free(p->queue_name);
+    free(p->location);
+    free(p->info);
+    if (p->make_model)
+      free(p->make_model);
+    if (p->pdl)
+      free(p->pdl);
+    free(p->uri);
+    free(p->host);
+    if (p->ip)
+      free(p->ip);
+    free(resource);
+    free(service_name);
+    free(type);
+    free(domain);
+    free(p);
     return (NULL);
   }
   if (domain != NULL && domain[0] != '\0' &&
@@ -8453,6 +8490,8 @@ create_queue(void* arg)
       current_time = time(NULL);
       p->timeout = current_time + TIMEOUT_IMMEDIATELY;
       cannot_create = 1;
+      free(loadedppd);
+      free(ppdfile);
       goto end;
     }
     num_cluster_printers = 0;
@@ -8461,10 +8500,16 @@ create_queue(void* arg)
     {
       if (!strcmp(s->queue_name, p->queue_name))
       {
-        if (s->status == STATUS_DISAPPEARED ||
+	if (s->status == STATUS_DISAPPEARED ||
 	    s->status == STATUS_UNCONFIRMED ||
 	    s->status == STATUS_TO_BE_RELEASED)
+	{
+	  if (ppdfile)
+	    free(ppdfile);
+	  if (loadedppd)
+	   free(loadedppd);
 	  goto end;
+	}
         num_cluster_printers ++;
       }
     }
@@ -8599,7 +8644,12 @@ create_queue(void* arg)
   // load balancing. In this case we will assign an
   // implicitclass://...  device URI, which makes cups-browsed find
   // the best destination for each job.
-  loadedppd = NULL;
+  if (loadedppd)
+  {
+    free(loadedppd);
+    loadedppd = NULL;
+  }
+
   if (cups_notifier != NULL && p->netprinter == 0)
   {
     // We are not an IPP network printer, so we use the device URI
@@ -11099,7 +11149,7 @@ resolve_callback(void* arg)
   if (a->type) free((char*)a->type);
   if (a->domain) free((char*)a->domain);
   if (a->host_name) free((char*)a->host_name);
-  if (a->txt) free(a->txt);
+  if (a->txt) avahi_string_list_free(a->txt);
   if (a->address) free((AvahiAddress*)a->address);
   free(a);
   pthread_rwlock_unlock(&resolvelock);
@@ -11127,10 +11177,11 @@ resolver_wrapper(AvahiServiceResolver *r,
   debug_printf("resolver_wrapper() in THREAD %ld\n", pthread_self());
 
   resolver_args_t *arg = (resolver_args_t*)malloc(sizeof(resolver_args_t));
-  AvahiStringList* temp_txt = (AvahiStringList*)malloc(sizeof(AvahiStringList));
+  AvahiStringList* temp_txt = NULL;
   AvahiAddress* temp_addr = (AvahiAddress*)malloc(sizeof(AvahiAddress));
 
-  temp_txt = avahi_string_list_copy(txt);
+  if (txt)
+    temp_txt = avahi_string_list_copy(txt);
 
   if (address)
   {
@@ -11177,7 +11228,7 @@ resolver_wrapper(AvahiServiceResolver *r,
       if (arg->type) free((char*)arg->type);
       if (arg->domain) free((char*)arg->domain);
       if (arg->host_name) free((char*)arg->host_name);
-      if (arg->txt) free(arg->txt);
+      if (arg->txt) avahi_string_list_free(arg->txt);
       if (arg->address) free((AvahiAddress*)arg->address);
       free(arg);
       return;
