@@ -7717,10 +7717,10 @@ create_remote_printer_entry (const char *queue_name,
     free(p->host);
     if (p->ip)
       free(p->ip);
-    free(resource);
-    free(service_name);
-    free(type);
-    free(domain);
+    free((char*)resource);
+    free((char*)service_name);
+    free((char*)type);
+    free((char*)domain);
     free(p);
     return (NULL);
   }
@@ -8490,7 +8490,7 @@ create_queue(void* arg)
       current_time = time(NULL);
       p->timeout = current_time + TIMEOUT_IMMEDIATELY;
       cannot_create = 1;
-      free(loadedppd);
+      free((char*)loadedppd);
       free(ppdfile);
       goto end;
     }
@@ -8507,7 +8507,7 @@ create_queue(void* arg)
 	  if (ppdfile)
 	    free(ppdfile);
 	  if (loadedppd)
-	   free(loadedppd);
+	   free((char*)loadedppd);
 	  goto end;
 	}
         num_cluster_printers ++;
@@ -8646,7 +8646,7 @@ create_queue(void* arg)
   // the best destination for each job.
   if (loadedppd)
   {
-    free(loadedppd);
+    free((char*)loadedppd);
     loadedppd = NULL;
   }
 
