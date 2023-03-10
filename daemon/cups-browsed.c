@@ -402,10 +402,8 @@ typedef struct pagesize_count_s
 
 typedef struct resolver_args_s
 {
-  AvahiServiceResolver *r;
   AvahiIfIndex interface;
   AvahiProtocol protocol;
-  AvahiResolverEvent event;
   const char *name;
   const char *type;
   const char *domain;
@@ -7717,10 +7715,10 @@ create_remote_printer_entry (const char *queue_name,
     free(p->host);
     if (p->ip)
       free(p->ip);
-    free((char*)resource);
-    free((char*)service_name);
-    free((char*)type);
-    free((char*)domain);
+    free(p->resource);
+    free(p->service_name);
+    free(p->type);
+    free(p->domain);
     free(p);
     return (NULL);
   }
@@ -10833,9 +10831,7 @@ resolve_callback(void* arg)
 {
   resolver_args_t* a = (resolver_args_t*)arg;
 
-  AvahiServiceResolver *r = a->r;
   AvahiIfIndex interface = a->interface;
-  AvahiResolverEvent event = a->event;
   const char *name = a->name;
   const char *type = a->type;
   const char *domain = a->domain;
@@ -10852,7 +10848,7 @@ resolve_callback(void* arg)
 
   debug_printf("resolve_callback() in THREAD %ld\n", pthread_self());
 
-  if (r == NULL || name == NULL || type == NULL || domain == NULL)
+  if (name == NULL || type == NULL || domain == NULL)
     return;
 
   // Get the interface name
@@ -10906,245 +10902,224 @@ resolve_callback(void* arg)
     }
   }
 
-  // Called whenever a service has been resolved successfully or timed out
+  // Called whenever a service has been resolved successfully
 
-  switch (event)
+  // New remote printer found
+  AvahiStringList *rp_entry, *adminurl_entry;
+  char *rp_key, *rp_value, *adminurl_key, *adminurl_value;
+
+  debug_printf("Avahi Resolver: Service '%s' of type '%s' in domain '%s' with host name '%s' and port %d on interface '%s' (%s).\n",
+	       name, type, domain, host_name, port, ifname,
+	       (address ?
+		(address->proto == AVAHI_PROTO_INET ? "IPv4" :
+		 address->proto == AVAHI_PROTO_INET6 ? "IPv6" :
+		 "IPv4/IPv6 Unknown") :
+		"IPv4/IPv6 Unknown"));
+
+  // Ignore if terminated (by SIGTERM)
+  if (terminating)
   {
+    debug_printf("Avahi Resolver: Ignoring because cups-browsed is terminating.\n");
+    goto ignore;
+  }
 
-    // Resolver error
-    case AVAHI_RESOLVER_FAILURE:
-        debug_printf("Avahi-Resolver: Failed to resolve service '%s' of type '%s' in domain '%s' with host name '%s' and port %d on interface '%s' (%s): %s\n",
-		     name, type, domain, host_name, port, ifname,
-		     (address ?
-		      (address->proto == AVAHI_PROTO_INET ? "IPv4" :
-		       address->proto == AVAHI_PROTO_INET6 ? "IPv6" :
-		       "IPv4/IPv6 Unknown") :
-		      "IPv4/IPv6 Unknown"),
-		     avahi_strerror(avahi_client_errno(avahi_service_resolver_get_client(r))));
-	break;
+  if (txt && (rp_entry = avahi_string_list_find(txt, "rp")))
+    avahi_string_list_get_pair(rp_entry, &rp_key, &rp_value, NULL);
+  else
+  {
+    rp_key = strdup("rp");
+    rp_value = strdup("");
+  }
+  if (txt && (adminurl_entry = avahi_string_list_find(txt, "adminurl")))
+    avahi_string_list_get_pair(adminurl_entry, &adminurl_key,
+			       &adminurl_value, NULL);
+  else
+  {
+    adminurl_key = strdup("adminurl");
+    if (host_name &&
+	(adminurl_value = malloc(strlen(host_name) + 8)) != NULL)
+      sprintf(adminurl_value, "http://%s", host_name);
+    else
+      adminurl_value = strdup("");
+  }
 
-    // New remote printer found
-    case AVAHI_RESOLVER_FOUND:
-        {
-	  AvahiStringList *rp_entry, *adminurl_entry;
-	  char *rp_key, *rp_value, *adminurl_key, *adminurl_value;
+  // If we create queues only for local IPP printers (like IPP-over-USB
+  // with ippusbxd) check whether the entry is local and skip if not.
+  // We also check for remote CUPS (with "printer-type" TXT field) as this
+  // option is only for IPP network printers
+  if (CreateIPPPrinterQueues == IPP_PRINTERS_LOCAL_ONLY &&
+      strcasecmp(ifname, "lo") &&
+      (!txt || avahi_string_list_find(txt, "printer-type") == NULL))
+  {
+    debug_printf("Avahi Resolver: Service '%s' of type '%s' in domain '%s' skipped, not a local service.\n",
+		 name, type, domain);
+    goto clean_up;
+  }
 
-	  debug_printf("Avahi Resolver: Service '%s' of type '%s' in domain '%s' with host name '%s' and port %d on interface '%s' (%s).\n",
-		       name, type, domain, host_name, port, ifname,
-		       (address ?
-			(address->proto == AVAHI_PROTO_INET ? "IPv4" :
-			 address->proto == AVAHI_PROTO_INET6 ? "IPv6" :
-			 "IPv4/IPv6 Unknown") :
-			"IPv4/IPv6 Unknown"));
-
-	  // Ignore if terminated (by SIGTERM)
-	  if (terminating)
-	  {
-	    debug_printf("Avahi Resolver: Ignoring because cups-browsed is terminating.\n");
-	    break;
-	  }
-
-	  if (txt && (rp_entry = avahi_string_list_find(txt, "rp")))
-	    avahi_string_list_get_pair(rp_entry, &rp_key, &rp_value, NULL);
+  if (txt && rp_key && rp_value && adminurl_key && adminurl_value &&
+      !strcasecmp(rp_key, "rp") &&
+      !strcasecmp(adminurl_key, "adminurl"))
+  {
+    char *p, instance[64];
+    // Extract instance from DNSSD service name (to serve as info field)
+    p = strstr(name, " @ ");
+    if (p)
+    {
+      int n;
+      n = p - name;
+      if (n >= sizeof(instance))
+	n = sizeof(instance) - 1;
+      strncpy(instance, name, sizeof(instance) - 1);
+      instance[n] = '\0';
+      debug_printf("Avahi-Resolver: Instance: %s\n", instance); // !!
+    }
+    else
+      instance[0] = '\0';
+    // Determine the remote printer's IP
+    if (IPBasedDeviceURIs != IP_BASED_URIS_NO ||
+	(!browseallow_all && cupsArrayCount(browseallow) > 0))
+    {
+      struct sockaddr saddr;
+      struct sockaddr *addr = &saddr;
+      char *addrstr;
+      int addrlen;
+      int addrfound = 0;
+      if ((addrstr = calloc(256, sizeof(char))) == NULL)
+      {
+	debug_printf("Avahi Resolver: Service '%s' of type '%s' in domain '%s' skipped, could not allocate memory to determine IP address.\n",
+		     name, type, domain);
+	goto clean_up;
+      }
+      if (address &&
+	  address->proto == AVAHI_PROTO_INET &&
+	  IPBasedDeviceURIs != IP_BASED_URIS_IPV6_ONLY)
+      {
+	avahi_address_snprint(addrstr, 256, address);
+	addr->sa_family = AF_INET;
+	if (inet_aton(addrstr,
+		      &((struct sockaddr_in *) addr)->sin_addr) &&
+	    allowed(addr))
+	  addrfound = 1;
+      }
+      else if (address &&
+	       address->proto == AVAHI_PROTO_INET6 &&
+	       interface != AVAHI_IF_UNSPEC &&
+	       IPBasedDeviceURIs != IP_BASED_URIS_IPV4_ONLY)
+      {
+	strncpy(addrstr, "[v1.", sizeof(addrstr) - 1);
+	avahi_address_snprint(addrstr + 4, 256 - 6, address);
+	addrlen = strlen(addrstr + 4);
+	addr->sa_family = AF_INET6;
+	if (inet_pton(AF_INET6, addrstr + 4,
+		      &((struct sockaddr_in6 *) addr)->sin6_addr) &&
+	    allowed(addr))
+	{
+	  if (!strncasecmp(addrstr + 4, "fe", 2) &&
+	      (addrstr[6] == '8' || addrstr[6] == '9' ||
+	       addrstr[6] == 'A' || addrstr[6] == 'B' ||
+	       addrstr[6] == 'a' || addrstr[6] == 'B'))
+	    // Link-local address, needs specification of interface
+	    snprintf(addrstr + addrlen + 4, 256 -
+		     addrlen - 4, "%%%s]",
+		     ifname);
 	  else
 	  {
-	    rp_key = strdup("rp");
-	    rp_value = strdup("");
+	    addrstr[addrlen + 4] = ']';
+	    addrstr[addrlen + 5] = '\0';
 	  }
-	  if (txt && (adminurl_entry = avahi_string_list_find(txt, "adminurl")))
-	    avahi_string_list_get_pair(adminurl_entry, &adminurl_key,
-				       &adminurl_value, NULL);
-	  else
-	  {
-	    adminurl_key = strdup("adminurl");
-	    if (host_name &&
-		(adminurl_value = malloc(strlen(host_name) + 8)) != NULL)
-	      sprintf(adminurl_value, "http://%s", host_name);
-	    else
-	      adminurl_value = strdup("");
-	  }
-
-	  // If we create queues only for local IPP printers (like IPP-over-USB
-	  // with ippusbxd) check whether the entry is local and skip if not.
-	  // We also check for remote CUPS (with "printer-type" TXT field) as this
-	  // option is only for IPP network printers
-	  if (CreateIPPPrinterQueues == IPP_PRINTERS_LOCAL_ONLY &&
-	      strcasecmp(ifname, "lo") &&
-	      (!txt || avahi_string_list_find(txt, "printer-type") == NULL))
-	  {
-	    debug_printf("Avahi Resolver: Service '%s' of type '%s' in domain '%s' skipped, not a local service.\n",
-			 name, type, domain);
-	    goto clean_up;
-	  }
-
-	  if (txt && rp_key && rp_value && adminurl_key && adminurl_value &&
-	      !strcasecmp(rp_key, "rp") &&
-	      !strcasecmp(adminurl_key, "adminurl"))
-	  {
-	    char *p, instance[64];
-	    // Extract instance from DNSSD service name (to serve as info field)
-	    p = strstr(name, " @ ");
-	    if (p)
-	    {
-	      int n;
-	      n = p - name;
-	      if (n >= sizeof(instance))
-		n = sizeof(instance) - 1;
-	      strncpy(instance, name, sizeof(instance) - 1);
-	      instance[n] = '\0';
-	      debug_printf("Avahi-Resolver: Instance: %s\n", instance); // !!
-	    }
-	    else
-	      instance[0] = '\0';
-	    // Determine the remote printer's IP
-	    if (IPBasedDeviceURIs != IP_BASED_URIS_NO ||
-		(!browseallow_all && cupsArrayCount(browseallow) > 0))
-	    {
-	      struct sockaddr saddr;
-	      struct sockaddr *addr = &saddr;
-	      char *addrstr;
-	      int addrlen;
-	      int addrfound = 0;
-	      if ((addrstr = calloc(256, sizeof(char))) == NULL)
-	      {
-		debug_printf("Avahi Resolver: Service '%s' of type '%s' in domain '%s' skipped, could not allocate memory to determine IP address.\n",
-			     name, type, domain);
-		goto clean_up;
-	      }
-	      if (address &&
-		  address->proto == AVAHI_PROTO_INET &&
-		  IPBasedDeviceURIs != IP_BASED_URIS_IPV6_ONLY)
-	      {
-		avahi_address_snprint(addrstr, 256, address);
-		addr->sa_family = AF_INET;
-		if (inet_aton(addrstr,
-			      &((struct sockaddr_in *) addr)->sin_addr) &&
-		    allowed(addr))
-		  addrfound = 1;
-	      }
-	      else if (address &&
-		       address->proto == AVAHI_PROTO_INET6 &&
-		       interface != AVAHI_IF_UNSPEC &&
-		       IPBasedDeviceURIs != IP_BASED_URIS_IPV4_ONLY)
-	      {
-		strncpy(addrstr, "[v1.", sizeof(addrstr) - 1);
-		avahi_address_snprint(addrstr + 4, 256 - 6, address);
-		addrlen = strlen(addrstr + 4);
-		addr->sa_family = AF_INET6;
-		if (inet_pton(AF_INET6, addrstr + 4,
-			      &((struct sockaddr_in6 *) addr)->sin6_addr) &&
-		    allowed(addr))
-		{
-		  if (!strncasecmp(addrstr + 4, "fe", 2) &&
-		      (addrstr[6] == '8' || addrstr[6] == '9' ||
-		       addrstr[6] == 'A' || addrstr[6] == 'B' ||
-		       addrstr[6] == 'a' || addrstr[6] == 'B'))
-		    // Link-local address, needs specification of interface
-		    snprintf(addrstr + addrlen + 4, 256 -
-			     addrlen - 4, "%%%s]",
-			     ifname);
-		  else
-		  {
-		    addrstr[addrlen + 4] = ']';
-		    addrstr[addrlen + 5] = '\0';
-		  }
-		  addrfound = 1;
-		}
-	      }
-	      else
-		debug_printf("Avahi Resolver: Service '%s' of type '%s' in domain '%s': No IP address information available.\n",
-			     name, type, domain);
-	      if (addrfound == 1)
-	      {
-		// Check remote printer type and create appropriate
-		// local queue to point to it
-		if (IPBasedDeviceURIs != IP_BASED_URIS_NO ||
-		    !host_name)
-		{
-		  debug_printf("Avahi Resolver: Service '%s' of type '%s' in domain '%s' with IP address %s.\n",
-			       name, type, domain, addrstr);
-		  pthread_rwlock_wrlock(&lock);
-		  examine_discovered_printer_record((strcasecmp(ifname, "lo") ?
-						     host_name : "localhost"),
-						    addrstr, port, rp_value,
-						    name, "", instance, type,
-						    domain, ifname,
-						    addr->sa_family, txt);
-		  pthread_rwlock_unlock(&lock);
-		}
-		else
-		{
-		  pthread_rwlock_wrlock(&lock);
-		  examine_discovered_printer_record((strcasecmp(ifname, "lo") ?
-						     host_name : "localhost"),
-						    NULL, port, rp_value,
-						    name, "", instance, type,
-						    domain, ifname,
-						    addr->sa_family, txt);
-		  pthread_rwlock_unlock(&lock);
-		}
-	      }
-	      else
-		debug_printf("Avahi Resolver: Service '%s' of type '%s' in domain '%s' skipped, could not determine IP address.\n",
-			     name, type, domain);
-	      free(addrstr);
-	    }
-	    else
-	    {
-	      // Check remote printer type and create appropriate local queue to
-	      // point to it
-	      if (host_name)
-	      {
-		pthread_rwlock_wrlock(&lock);
-		examine_discovered_printer_record((strcasecmp(ifname, "lo") ?
-						   host_name : "localhost"),
-						  NULL, port, rp_value,
-						  name, "", instance, type,
-						  domain, ifname,
-						  (address->proto ==
-						   AVAHI_PROTO_INET ? AF_INET :
-						   (address->proto ==
-						    AVAHI_PROTO_INET6 ?
-						    AF_INET6 : 0)),
-						  txt);
-		pthread_rwlock_unlock(&lock);
-	      }
-	      else
-		debug_printf("Avahi Resolver: Service '%s' of type '%s' in domain '%s' skipped, host name not supplied.\n",
-			     name, type, domain);
-	    }
-	  }
-
-	clean_up:
-
-	  // Clean up
-
-	  if (rp_entry)
-	  {
-	    avahi_free(rp_key);
-	    avahi_free(rp_value);
-	  }
-	  else
-	  {
-	    free(rp_key);
-	    free(rp_value);
-	  }
-	  if (adminurl_entry)
-	  {
-	    avahi_free(adminurl_key);
-	    avahi_free(adminurl_value);
-	  }
-	  else
-	  {
-	    free(adminurl_key);
-	    free(adminurl_value);
-	  }
-	  break;
+	  addrfound = 1;
 	}
+      }
+      else
+	debug_printf("Avahi Resolver: Service '%s' of type '%s' in domain '%s': No IP address information available.\n",
+		     name, type, domain);
+      if (addrfound == 1)
+      {
+	// Check remote printer type and create appropriate
+	// local queue to point to it
+	if (IPBasedDeviceURIs != IP_BASED_URIS_NO ||
+	    !host_name)
+	{
+	  debug_printf("Avahi Resolver: Service '%s' of type '%s' in domain '%s' with IP address %s.\n",
+		       name, type, domain, addrstr);
+	  pthread_rwlock_wrlock(&lock);
+	  examine_discovered_printer_record((strcasecmp(ifname, "lo") ?
+					     host_name : "localhost"),
+					    addrstr, port, rp_value,
+					    name, "", instance, type,
+					    domain, ifname,
+					    addr->sa_family, txt);
+	  pthread_rwlock_unlock(&lock);
+	}
+	else
+	{
+	  pthread_rwlock_wrlock(&lock);
+	  examine_discovered_printer_record((strcasecmp(ifname, "lo") ?
+					     host_name : "localhost"),
+					    NULL, port, rp_value,
+					    name, "", instance, type,
+					    domain, ifname,
+					    addr->sa_family, txt);
+	  pthread_rwlock_unlock(&lock);
+	}
+      }
+      else
+	debug_printf("Avahi Resolver: Service '%s' of type '%s' in domain '%s' skipped, could not determine IP address.\n",
+		     name, type, domain);
+      free(addrstr);
+    }
+    else
+    {
+      // Check remote printer type and create appropriate local queue to
+      // point to it
+      if (host_name)
+      {
+	pthread_rwlock_wrlock(&lock);
+	examine_discovered_printer_record((strcasecmp(ifname, "lo") ?
+					   host_name : "localhost"),
+					  NULL, port, rp_value,
+					  name, "", instance, type,
+					  domain, ifname,
+					  (address->proto ==
+					   AVAHI_PROTO_INET ? AF_INET :
+					   (address->proto ==
+					    AVAHI_PROTO_INET6 ?
+					    AF_INET6 : 0)),
+					  txt);
+	pthread_rwlock_unlock(&lock);
+      }
+      else
+	debug_printf("Avahi Resolver: Service '%s' of type '%s' in domain '%s' skipped, host name not supplied.\n",
+		     name, type, domain);
+    }
+  }
+
+ clean_up:
+
+  // Clean up
+
+  if (rp_entry)
+  {
+    avahi_free(rp_key);
+    avahi_free(rp_value);
+  }
+  else
+  {
+    free(rp_key);
+    free(rp_value);
+  }
+  if (adminurl_entry)
+  {
+    avahi_free(adminurl_key);
+    avahi_free(adminurl_value);
+  }
+  else
+  {
+    free(adminurl_key);
+    free(adminurl_value);
   }
 
  ignore:
-  if (a->r) avahi_service_resolver_free(a->r);
   if (a->name) free((char*)a->name);
   if (a->type) free((char*)a->type);
   if (a->domain) free((char*)a->domain);
@@ -11176,6 +11151,31 @@ resolver_wrapper(AvahiServiceResolver *r,
 {
   debug_printf("resolver_wrapper() in THREAD %ld\n", pthread_self());
 
+  // Do not launch a new thread on a resolver failure
+  if (event != AVAHI_RESOLVER_FOUND)
+  {
+    char ifname[IF_NAMESIZE];
+
+    if (!if_indextoname(interface, ifname))
+    {
+      debug_printf("Unable to find interface name for interface %d: %s\n",
+		   interface, strerror(errno));
+      strncpy(ifname, "Unknown", sizeof(ifname) - 1);
+    }
+    debug_printf("Avahi-Resolver: Failed to resolve service '%s' of type '%s' in domain '%s' with host name '%s' and port %d on interface '%s' (%s): %s\n",
+		 name, type, domain, host_name, port, ifname,
+		 (address ?
+		  (address->proto == AVAHI_PROTO_INET ? "IPv4" :
+		   address->proto == AVAHI_PROTO_INET6 ? "IPv6" :
+		   "IPv4/IPv6 Unknown") :
+		  "IPv4/IPv6 Unknown"),
+		 avahi_strerror(avahi_client_errno(avahi_service_resolver_get_client(r))));
+    return;
+  }
+
+  // Free the resolver data structure, we do not need it for our actual work
+  if (r) avahi_service_resolver_free(r);
+
   resolver_args_t *arg = (resolver_args_t*)malloc(sizeof(resolver_args_t));
   AvahiStringList* temp_txt = NULL;
   AvahiAddress* temp_addr = (AvahiAddress*)malloc(sizeof(AvahiAddress));
@@ -11189,10 +11189,8 @@ resolver_wrapper(AvahiServiceResolver *r,
     temp_addr->data = address->data;
   }
 
-  arg->r = r;
   arg->interface = interface;
   arg->protocol = protocol;
-  arg->event = event;
   arg->name = strdup(name);
   arg->type = strdup(type);
   arg->domain = strdup(domain);
@@ -11223,7 +11221,6 @@ resolver_wrapper(AvahiServiceResolver *r,
     if (attempts == 5)
     {
       debug_printf("Could not create new thread even after many attempts, ignoring this entry.\n");
-      if (arg->r) avahi_service_resolver_free(arg->r);
       if (arg->name) free((char*)arg->name);
       if (arg->type) free((char*)arg->type);
       if (arg->domain) free((char*)arg->domain);
