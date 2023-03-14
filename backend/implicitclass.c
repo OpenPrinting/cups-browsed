@@ -208,8 +208,9 @@ main(int  argc,				// I - Number of command-line args
       // All remote queues are either disabled or not accepting jobs, let
       // CUPS retry after the usual interval
       fprintf(stderr,
-	      "ERROR: No suitable destination host found by cups-browsed.\n");
-      return (CUPS_BACKEND_RETRY);
+	      "ERROR: No suitable destination host found by cups-browsed, retrying later\n");
+      sleep(60);
+      return (CUPS_BACKEND_RETRY_CURRENT);
     }
     else if (!strcmp(dest_host, "ALL_DESTS_BUSY"))
     {

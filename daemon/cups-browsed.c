@@ -705,19 +705,19 @@ debug_printf(const char *format, ...)
       vfprintf(lfp, format, arglist);
       fflush(lfp);
       va_end(arglist);
-    }
 
-    long int log_file_size = findLogFileSize(); 
-    if (DebugLogFileSize > 0 &&
-	log_file_size > (long int)DebugLogFileSize * 1024)
-    {
-      fclose(lfp);
-      FILE *fp1 = fopen(debug_log_file, "r");
-      FILE *fp2 = fopen(debug_log_file_bckp, "w");
-      copyToFile(&fp1, &fp2);
-      fclose(fp1);
-      fclose(fp2);
-      lfp = fopen(debug_log_file, "w");
+      long int log_file_size = findLogFileSize();
+      if (DebugLogFileSize > 0 &&
+	  log_file_size > (long int)DebugLogFileSize * 1024)
+      {
+	fclose(lfp);
+	FILE *fp1 = fopen(debug_log_file, "r");
+	FILE *fp2 = fopen(debug_log_file_bckp, "w");
+	copyToFile(&fp1, &fp2);
+	fclose(fp1);
+	fclose(fp2);
+	lfp = fopen(debug_log_file, "w");
+      }
     }
   }
   pthread_rwlock_unlock(&loglock);
@@ -7328,7 +7328,7 @@ on_printer_modified (CupsNotifier *object,
   if (is_created_by_cups_browsed(printer))
   {
     p = printer_record(printer);
-    if (p->overwritten)
+    if (!p || p->overwritten)
       // We already have discovered that this queue got overwritten
       // and are treating the process appropriately, so return now to
       // avoid an infinite recursion
@@ -7579,7 +7579,13 @@ ipp_discoveries_add(cups_array_t *a,
   e->interface = strdup(interface);
   e->type = strdup(type);
   e->family = family;
-  cupsArrayAdd(a, e);
+  if (cupsArrayFind(a, e))
+  {
+    debug_printf("DEBUG: Duplicate discovery entry, not adding.\n");
+    ipp_discovery_free(e, NULL);
+  }
+  else
+    cupsArrayAdd(a, e);
   ipp_discoveries_list(a);
   return (1);
 }
@@ -9089,6 +9095,8 @@ create_queue(void* arg)
   }
   cupsFreeOptions(num_options, options);
   cups_queues_updated ++;
+  debug_printf("Print queue update %d of this series: %s\n",
+	       cups_queues_updated, p->queue_name);
 
   if (cupsLastError() > IPP_STATUS_OK_EVENTS_COMPLETE)
   {
@@ -9307,6 +9315,8 @@ update_cups_queues(gpointer unused)
 
   debug_printf("Processing printer list ...\n");
   log_all_printers();
+  cups_queues_updated = 0;
+
   for (p = (remote_printer_t *)cupsArrayFirst(remote_printers);
        p; p = (remote_printer_t *)cupsArrayNext(remote_printers))
   {
@@ -9475,6 +9485,8 @@ update_cups_queues(gpointer unused)
 	      ippDelete(cupsDoRequest(http, request, "/admin/"));
 
 	      cups_queues_updated ++;
+	      debug_printf("Print queue update %d of this series: %s\n",
+			   cups_queues_updated, p->queue_name);
 
 	      if (cupsLastError() > IPP_STATUS_OK_EVENTS_COMPLETE &&
 		  cupsLastError() != IPP_STATUS_ERROR_NOT_FOUND)
