@@ -29,7 +29,6 @@ Makefile
 missing
 stamp-h1
 test-driver
-test
 .deps
 .libs
 tmp/

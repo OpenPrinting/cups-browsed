@@ -105,6 +105,24 @@ EXTRA_DIST += daemon/cups-browsed.in \
 BUILT_SOURCES = $(cups_notifier_sources)
 CLEANFILES = $(BUILT_SOURCES) $(GENERATED_DEFS)
 
+# ================================
+# Tests ("make test"/"make check")
+# ================================
+
+TESTdir = test
+
+TEST_SCRIPTS = \
+	test/run-tests.sh
+
+TESTS = \
+	test/run-tests.sh
+
+EXTRA_DIST += \
+	test/run-tests.sh \
+	test/test.convs \
+	test/testhp.ppd \
+	test/testps.ppd
+
 distclean-local:
 	rm -rf *.cache *~
 

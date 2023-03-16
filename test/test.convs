@@ -1,0 +1,2 @@
+# pdftopdf filter of cups-filters 1.x or 2.x
+application/pdf application/vnd.cups-pdf 100 pdftopdf
