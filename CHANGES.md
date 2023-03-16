@@ -1,4 +1,57 @@
-# CHANGES - OpenPrinting cups-browsed v2.0b3 - 2023-01-31
+# CHANGES - OpenPrinting cups-browsed v2.0b4 - 2023-03-16
+
+## CHANGES IN V2.0b4 (16th March 2023)
+
+- Added test script for `make test`/`make check`, CI, autopkgtest, ...
+  The script test/run-tests.sh creates emulations of IPP printers via
+  `ippeveprinter` (of CUPS 2.x) and checks whether cups-browsed
+  creates corresponding CUPS queues, whether a job to such a queue
+  gets actually printed, and whether cups-browsed removes the queues
+  again when the printers are shut down.
+
+- `implicitclass` backend: If no destination got reported by
+  cups-browsed, retry after one minute, not the standard 5 minutes of
+  CUPS.
+
+- `debug_printf()`: Check for need of log rotation only if log file is
+  set and opened, to avoid a crash.
+
+- `on_printer_modified()`: Added NULL check to avoid a crash.
+
+- `ipp_discoveries_add()`: Ignore duplicate entries. These are most
+  probably caused by a bug in Avahi, having certain discoveries of a
+  printer reported twice and others not. When the printer disappears
+  Avahi reports the disappearal of each discovery correctly, leaving
+  the duplicate entry untreated (removing only one instance of it) and
+  cups-browsed assumes that the printer is still there, keeping its
+  CUPS queue.
+
+- `update_cups_queues()`: Reset counter for pausing CUPS queue updates.
+  Otherwise after having updated the number of queues supposed to be
+  the maximum for one run of `update_cups_queues()`, cups-browsed will
+  never update any queue again.
+
+- `resolve_callback()`/`resolver_wrapper()`: New thread only when
+  printer found
+  We move the check which resolver event we have (found/failure)
+  already in the main thread (`resolver_wrapper()`) and launch a new
+  thread only if we have found a new printer and have to investigate
+  whether to add a queue for it or not. `resolve_callback()` only
+  initiates this investigation now.  This way we do not need to pass
+  the resolver data structure (of type `AvahiServiceResolver*`) into
+  the new thread, which caused segfaults.
+
+- `create_remote_printer_entry()`: Corrected some memory freeing when
+  a printer data structure is deleted, but this has not caused a
+  segfault in the recent tests.
+
+- Fixed issues reported by Red Hat Coverity tool (Pull request #6)
+
+- `configure.ac`: Change deprecated `AC_PROG_LIBTOOL` for `LT_INIT`
+  (Pull request #5)
+
+- `configure.ac`: cups-browsed doesn't need C++
+
 
 ## CHANGES IN V2.0b3 (31st January 2023)
 
