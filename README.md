@@ -91,6 +91,64 @@ compatibility.
 
 * [Short history of cups-browsed](https://openprinting.github.io/achievements/#cups-browsed)
 
+## TEST SUITE
+
+The script test/run-tests.sh creates emulations of IPP printers via
+"ippeveprinter" (of CUPS 2.x) and checks whether cups-browsed creates
+corresponding CUPS queues, whether a job to such a queue gets actually
+printed, and whether cups-browsed removes the queues again when the
+printers are shut down.
+
+SIDE EFFECT: By developing this script cups-browsed got tested running
+as non-root user (only needs to be member of the "lpadmin" group) and
+works properly this way. Appropriate distribution packaging is
+recommended to improve system security.
+
+REQUIREMENTS:
+
+Most of these are already needed for building or using cups-browsed.
+
+- CUPS 2.x must be installed: cupsd, lpstat, lp, ippevepriner,
+  cups-config, and everything needed to run cupsd.
+
+- cups-filters 2.x needs to be installed, providing the filters for
+  processing print jobs and the "driverless" utility to discover
+  printers via shell script.
+
+- cups-browsed 2.x needs to be installed for test mode 3 or for
+  running the script as root.
+
+The script has different modes:
+
+- Run without arguments by "make" it goes into "make check" mode,
+  copying the files of the system's CUPS (to pull it out of the
+  distro's AppArmor harness of the distro, run it as normal
+  user, and modify the configuration) to run an own CUPS instance
+  on port 8631, and running the cups-browsed executable built
+  by "make", attached to this CUPS instance.
+
+- Run without arguments directly it asks the use for the test mode
+  and whether tey want to run the daemons under Valgrind. Modes are
+
+  + 0: Only start cupsd and cups-browsed, for manual testing
+    independent of the system's environment
+  + 1: As 0, but also run the 2 ippeveprinter instances to emulate
+    printers
+  + 2: Run the "make check" mode described above.
+  + 3: Do the same tests as in "make check" mode, but use the system's
+    CUPS and cups-browsed. This mode is for the autopkgtest of Debian
+    and Ubuntu, or for CI tests in general.
+
+- Run with a number (0-3) as argument the appropriate mode is selected,
+  run with a number (0-3) as first and "yes" or "no" as second argument
+  using or not using Valgrind is also selected.
+
+- Running the script as root always uses the system's CUPS and
+  cups-browsed.
+
+The test's CUPS instance and all log files are held in
+/tmp/cups-browsed${USER}/.
+
 ## DOCUMENTATION FROM CUPS-FILTERS 1.x
 
 Most of this is still valid for the current cups-browsed.
