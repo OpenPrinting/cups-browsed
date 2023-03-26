@@ -21,7 +21,6 @@
 
 #include <config.h>
 #include <cups/cups.h>
-#include <cups/backend.h>
 #include <cups/array.h>
 #include <ctype.h>
 #include <stdio.h>
@@ -308,6 +307,7 @@ main(int  argc,				// I - Number of command-line args
 	cfGetPrinterAttributes4(printer_uri, NULL, 0, NULL, 0, 1, 0);
                                            // Poll the printer attributes from
 					   // the printer
+      filter_data.header = NULL;           // CUPS Raster header (not used here)
       filter_data.num_options = num_options;
       filter_data.options = options;       // Command line options from 5th
 					   // arg
