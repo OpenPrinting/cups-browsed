@@ -731,10 +731,10 @@ mkdir -p $IPPEVEBASE/spool/1
 mkdir -p $IPPEVEBASE/spool/2
 mkdir -p $IPPEVEBASE/log
 
-echo "Color duplex printer $queue_prefix-ippeve-1._ipps._tcp.local"
+echo "Color duplex printer $queue_prefix-ippeve-1._ipps._tcp.local, accepting JPEG, Apple Raster/URF, PWG Raster, and PDF"
 
 while true; do
-    nohup ippeveprinter -vvvv -s 10,10 -2 -d "$IPPEVEBASE/spool/1" -k "$queue_prefix-ippeve-1" > $IPPEVEBASE/log/ippeve1_log 2>&1 &
+    nohup ippeveprinter -vvvv -s 10,10 -2 -f "image/jpeg,image/pwg-raster,image/urf,application/pdf" -d "$IPPEVEBASE/spool/1" -k "$queue_prefix-ippeve-1" > $IPPEVEBASE/log/ippeve1_log 2>&1 &
     ipp_eve_pid1=$!
     sleep 2
     if ipptool -tv `driverless | grep "$queue_prefix-ippeve-1"` get-printer-attributes.test >/dev/null; then
@@ -750,9 +750,9 @@ done
 echo "   ippeveprinter PID: $ipp_eve_pid1"
 echo ""
 
-echo "Monochrome printer $queue_prefix-ippeve-2._ipps._tcp.local"
+echo "Monochrome printer $queue_prefix-ippeve-2._ipps._tcp.local, accepting Apple Raster/URF, PWG Raster, and PDF"
 
-nohup ippeveprinter -vvvv -s 10,0 -d "$IPPEVEBASE/spool/2" -k "$queue_prefix-ippeve-2" > $IPPEVEBASE/log/ippeve2_log 2>&1 &
+nohup ippeveprinter -vvvv -s 10,0 -f "image/pwg-raster,image/urf,application/pdf" -d "$IPPEVEBASE/spool/2" -k "$queue_prefix-ippeve-2" > $IPPEVEBASE/log/ippeve2_log 2>&1 &
 ipp_eve_pid2=$!
 
 echo "   ippeveprinter PID: $ipp_eve_pid2"
@@ -865,7 +865,7 @@ if ! ls -l $IPPEVEBASE/spool/1/1-${testfile_}.urf > /dev/null 2>&1; then
 fi
 
 if ! grep -q '^UNIRAST' $IPPEVEBASE/spool/1/1-${testfile_}.urf; then
-    echo "FAIL: Job file (1-{$testfile_}.urf) is not Apple Raster/URF!"
+    echo "FAIL: Job file (1-{$testfile_}.urf) is not Apple Raster/URF (URF should be preferred against the also supported PDF)!"
     clean_up 1
     exit 1
 fi
