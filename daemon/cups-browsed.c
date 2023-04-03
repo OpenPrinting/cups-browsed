@@ -6913,13 +6913,14 @@ on_job_state (CupsNotifier *object,
       }
 
       // The priority order for the PDLs is the same as in the
-      // PPD generator in cupsfilters/ppdgenerator.c
+      // PPD generator in ppd/ppd-generator.c of libppd
       document_format = (char *)malloc(sizeof(char) * 32);
-      if (cupsArrayFind(pdl_list, "application/vnd.cups-pdf") ||
-	  cupsArrayFind(pdl_list, "application/pdf"))
+      if (cupsArrayFind(pdl_list, "application/vnd.cups-pdf"))
 	strcpy(document_format, "application/vnd.cups-pdf");
       else if (cupsArrayFind(pdl_list, "image/urf"))
 	strcpy(document_format, "image/urf");
+      else if (cupsArrayFind(pdl_list, "application/pdf"))
+	strcpy(document_format, "application/vnd.cups-pdf");
       else if (cupsArrayFind(pdl_list, "image/pwg-raster"))
 	strcpy(document_format, "image/pwg-raster");
       else if (cupsArrayFind(pdl_list, "application/PCLm"))
