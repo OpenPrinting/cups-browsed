@@ -251,9 +251,9 @@ esac
 # components from there
 #
 
-sys_datadir=`cups-config --datadir`
-sys_serverbin=`cups-config --serverbin`
-sys_serverroot=`cups-config --serverroot`
+sys_datadir=`pkg-config --variable=cups_datadir cups`
+sys_serverbin=`pkg-config --variable=cups_serverbin cups`
+sys_serverroot=`pkg-config --variable=cups_serverroot cups`
 
 #
 # Pseudo-random number (nanoseconds of "date") as prefix for
