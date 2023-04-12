@@ -22,6 +22,7 @@
 #include <config.h>
 #include <cups/cups.h>
 #include <cups/array.h>
+#include <cups/backend.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <fcntl.h>
