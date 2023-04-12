@@ -1,4 +1,4 @@
-# OpenPrinting cups-browsed v2.0b4 - 2023-03-16
+# OpenPrinting cups-browsed v2.0rc1 - 2023-04-12
 
 Looking for compile instructions?  Read the file "INSTALL"
 instead...

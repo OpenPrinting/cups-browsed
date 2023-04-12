@@ -1,4 +1,23 @@
-# CHANGES - OpenPrinting cups-browsed v2.0b4 - 2023-03-16
+# CHANGES - OpenPrinting cups-browsed v2.0rc1 - 2023-04-12
+
+## CHANGES IN V2.0rc1 (12th April 2023)
+
+- Prefer sending jobs in Apple Raster instead of in PDF
+  If a destination printer supports both PDF and Apple Raster, and if
+  it is not a remote CUPS queue, prefer sending the job in Apple
+  Raster, as printers print this more reliably.
+
+      https://bugs.launchpad.net/bugs/2014976
+
+- run-tests.sh: Let emulated printers support PDF input
+  To test that cups-browsed prefers Apple Raster when the printer
+  supports both PDF and Apple Raster as input format, we let the
+  printers emulated by ippeveprinter also support PDF.
+
+- implicitclass backend: NULL-initialize filter data field for Raster header
+  We are running a filter chain without PPD file, so we do not have
+  Raster header, so initialize it to NULL.
+
 
 ## CHANGES IN V2.0b4 (16th March 2023)
 
