@@ -109,11 +109,6 @@ CLEANFILES = $(BUILT_SOURCES) $(GENERATED_DEFS)
 # Tests ("make test"/"make check")
 # ================================
 
-TESTdir = test
-
-TEST_SCRIPTS = \
-	test/run-tests.sh
-
 TESTS = \
 	test/run-tests.sh
 
