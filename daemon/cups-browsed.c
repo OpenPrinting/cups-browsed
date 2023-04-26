@@ -6181,10 +6181,18 @@ get_local_queue_name(const char *service_name,
       // make/model info
       queue_name = remove_bad_chars(make_model, 0);
     else if (LocalQueueNamingRemoteCUPS == LOCAL_QUEUE_NAMING_REMOTE_NAME)
+    {
       // Not directly used in script generation input later, but taken from
       // packet, so better safe than sorry. (consider second loop with
       // backup_queue_name)
-      queue_name = remove_bad_chars(strrchr(resource, '/') + 1, 0);
+
+     /* We can get resource without / or without string after / - use
+      * the original string (possible trailing / will be removed) */
+      if ((str = strrchr(resource, '/')) == NULL || strlen(str) <= 1)
+	str = resource;
+
+      queue_name = remove_bad_chars(str, 0);
+    }
     else
       // Convert DNS-SD service name into a CUPS queue name exactly
       // as CUPS would do it, to override CUPS' own temporary queue
