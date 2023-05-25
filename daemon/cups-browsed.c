@@ -479,7 +479,6 @@ static size_t NumBrowsePoll = 0;
 static guint update_netifs_sourceid = 0;
 static char local_server_str[1024];
 static char *DomainSocket = NULL;
-static int cannot_create = 0;
 static int cups_queues_updated = 0;
 static int update_count = 0;
 static unsigned int HttpLocalTimeout = 5;
@@ -8494,7 +8493,6 @@ create_queue(void* arg)
       p->status = STATUS_DISAPPEARED;
       current_time = time(NULL);
       p->timeout = current_time + TIMEOUT_IMMEDIATELY;
-      cannot_create = 1;
       free((char*)loadedppd);
       free(ppdfile);
       goto end;
@@ -8590,7 +8588,6 @@ create_queue(void* arg)
         p->status = STATUS_DISAPPEARED;
 	current_time = time(NULL);
         p->timeout = current_time + TIMEOUT_IMMEDIATELY;
-        cannot_create = 1;
         goto end;
       }
       else
@@ -8696,7 +8693,9 @@ create_queue(void* arg)
       {
 	debug_printf("get-printer-attributes IPP call failed on printer %s (%s).\n",
 		     p->queue_name, p->uri);
-	cannot_create = 1;
+	p->status = STATUS_DISAPPEARED;
+	current_time = time(NULL);
+	p->timeout = current_time + TIMEOUT_IMMEDIATELY;
 	goto end;
       }
       num_cluster_printers = 0;
@@ -8780,7 +8779,6 @@ create_queue(void* arg)
 	  p->status = STATUS_DISAPPEARED;
 	  current_time = time(NULL);
 	  p->timeout = current_time + TIMEOUT_IMMEDIATELY;
-	  cannot_create = 1;
 	  goto end;
 	}
 	else
@@ -9321,8 +9319,6 @@ update_cups_queues(gpointer unused)
   for (p = (remote_printer_t *)cupsArrayFirst(remote_printers);
        p; p = (remote_printer_t *)cupsArrayNext(remote_printers))
   {
-    if (cannot_create) goto cannot_create;
-
     // We need to get the current time as precise as possible for retries
     // and reset the timeout flag
     current_time = time(NULL);
@@ -9631,10 +9627,6 @@ update_cups_queues(gpointer unused)
 	 p; p = (remote_printer_t *)cupsArrayNext(remote_printers))
       if (p->timeout <= current_time + pause_between_cups_queue_updates)
 	p->timeout = current_time + pause_between_cups_queue_updates;
-
- cannot_create:
-  if (p && !in_shutdown)
-    remove_printer_entry(p);
 
   log_all_printers();
   pthread_rwlock_unlock(&update_lock);
