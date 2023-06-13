@@ -6048,6 +6048,11 @@ load_printer_options(const char *printer,
 		 printer);
     while (getline(&opt, &optlen, fp) != -1)
     {
+      // Skip "xxx-default" IPP attributes, these properties are already
+      // covered by the PPD defaults and we also wnat to eliminate
+      // "print-quality-default=0" which makes the queue not printing.
+      if (strstr(opt, "-default="))
+	continue;
       if (strlen(opt) > 1 && (val = strchr(opt, '=')) != NULL)
       {
 	*val = '\0';
