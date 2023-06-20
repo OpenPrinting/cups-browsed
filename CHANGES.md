@@ -1,4 +1,35 @@
-# CHANGES - OpenPrinting cups-browsed v2.0rc1 - 2023-04-12
+# CHANGES - OpenPrinting cups-browsed v2.0rc2 - 2023-06-20
+
+## CHANGES IN V2.0rc2 (20th June 2023)
+
+- Fixed cups-browsed getting stuck in busy loop
+  When the function create_queue() fails to create a local print queue
+  and the failure is not intermittent, it sets a global variable to
+  stop the main thread's loop for updating local queues. With the
+  variable not reset no queue updates happened ever again and
+  cups-browsed fell into a busy loop taking up to 100% CPU. We have
+  solved this by doing away with the variable and simply mark these
+  printers as disappeared (Ubuntu bug
+  [#2018504](https://bugs.launchpad.net/bugs/2018504).
+
+- Do not record `*-default` IPP attributes of local CUPS queues
+  Many of the `*-default` IPP attributes represent properties already
+  covered by the PPD option defaults which we also record. In
+  addition, there is also `print-quality-default` where IPP reports
+  `draft`, `normal`, and `high` settings while CUPS only accepts `3`,
+  `4`, and `5`, and on everything else it sets
+  `print-quality-default=0` which is invalid and jobs do not get
+  printed. So we stop saving and loading these attributes.
+
+- Build system: Removed unnecessary lines in Makefile.am
+  Removed the `TESTdir` and `TEST_SCRIPTS` entries in Makefile.am.
+  They are not needed and let `make install` try to install
+  `run-tests.sh` in the source directory, where it already is, causing
+  an error.
+
+- `run-tests.sh`: Use pkgconfig instead of deprecated cups-config
+  (Pull request #9).
+
 
 ## CHANGES IN V2.0rc1 (12th April 2023)
 

@@ -5,7 +5,7 @@ AC_PREREQ([2.65])
 # ====================
 # Version informations
 # ====================
-AC_INIT([cups-browsed], [2.0rc1], [https://github.com/OpenPrinting/cups-browsed/issues], [cups-browsed], [https://github.com/OpenPrinting/cups-browsed/])
+AC_INIT([cups-browsed], [2.0rc2], [https://github.com/OpenPrinting/cups-browsed/issues], [cups-browsed], [https://github.com/OpenPrinting/cups-browsed/])
 cups_browsed_version="AC_PACKAGE_VERSION"
 cups_browsed_version_major="`echo AC_PACKAGE_VERSION | awk -F. '{print $1}'`"
 cups_browsed_version_major="`echo AC_PACKAGE_VERSION | awk -F. '{printf("%d\n",$2);}'`"
