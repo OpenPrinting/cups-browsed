@@ -9046,9 +9046,10 @@ create_queue(void* arg)
 		IPP_PRINTER_IDLE);
   // ... and accepting jobs
   ippAddBoolean(request, IPP_TAG_PRINTER, "printer-is-accepting-jobs", 1);
-  // Location
-  ippAddString(request, IPP_TAG_PRINTER, IPP_TAG_TEXT,
-	       "printer-location", NULL, p->location);
+  // Location (only if the remote server actually provides a location string)
+  if (p->location && p->location[0])
+    ippAddString(request, IPP_TAG_PRINTER, IPP_TAG_TEXT,
+		 "printer-location", NULL, p->location);
   num_options = 0;
   options = NULL;
   // Device URI: ipp(s)://<remote host>:631/printers/<remote queue>
@@ -9058,9 +9059,6 @@ create_queue(void* arg)
   // Option cups-browsed=true, marking that we have created this queue
   num_options = cupsAddOption(CUPS_BROWSED_MARK "-default", "true",
 			      num_options, &options);
-  // Description
-  num_options = cupsAddOption("printer-info", p->info,
-			      num_options, &options);
 
   // Default option settings from printer entry
   for (i = 0; i < p->num_options; i ++)
@@ -9068,6 +9066,13 @@ create_queue(void* arg)
       num_options = cupsAddOption(p->options[i].name,
 				  p->options[i].value,
 				  num_options, &options);
+
+  // Description (only if the remote server actually provides a description
+  // string)
+  if (p->info && p->info[0])
+    num_options = cupsAddOption("printer-info", p->info,
+				num_options, &options);
+
   // Encode option list into IPP attributes
   cupsEncodeOptions2(request, num_options, options, IPP_TAG_OPERATION);
   cupsEncodeOptions2(request, num_options, options, IPP_TAG_PRINTER);
