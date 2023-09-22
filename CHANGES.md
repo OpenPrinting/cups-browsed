@@ -1,4 +1,22 @@
-# CHANGES - OpenPrinting cups-browsed v2.0rc2 - 2023-06-20
+# CHANGES - OpenPrinting cups-browsed v2.0.0 - 2023-09-22
+
+## CHANGES IN V2.0.0 (22th September 2023)
+
+- Ensure we always send a valid name to `remove_bad_chars()`
+  In case the found queue is a CUPS remote queue shared via DNS-SD,
+  the `rp_value` can be without '/', which leads to `cups-browsed`
+  crash if it is set to create the local queue based on the remote
+  name (Pull request #13, Fedora Bugzilla #2150035).
+
+- Use description/location from server if available, otherwise from client
+  When we create a local queue we first check whether we actually got
+  description and location strings from the remote server/printer, if
+  they are empty we do not set empty strings but use the IPP
+  attributes saved locally for our local queue. This way, if the
+  server does not provide description/location and the user sets their
+  own, that one is conserved through reboots and daemon restarts
+  (Issue #323).
+
 
 ## CHANGES IN V2.0rc2 (20th June 2023)
 
