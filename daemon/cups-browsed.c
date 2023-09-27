@@ -400,6 +400,7 @@ typedef struct pagesize_count_s
   int   count;
 } pagesize_count_t;
 
+#ifdef HAVE_AVAHI
 typedef struct resolver_args_s
 {
   AvahiIfIndex interface;
@@ -414,6 +415,7 @@ typedef struct resolver_args_s
   AvahiLookupResultFlags flags;
   void* userdata;
 } resolver_args_t;
+#endif // HAVE_AVAHI
 
 typedef struct create_args_s
 {
