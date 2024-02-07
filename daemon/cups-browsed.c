@@ -10889,7 +10889,7 @@ resolve_callback(void* arg)
   AVAHI_GCC_UNUSED void* userdata = a->userdata;
 
   char ifname[IF_NAMESIZE];
-  AvahiStringList *uuid_entry, *printer_type_entry;
+  AvahiStringList *uuid_entry = NULL, *printer_type_entry;
   char *uuid_key, *uuid_value;
 
   debug_printf("resolve_callback() in THREAD %ld\n", pthread_self());
@@ -11166,6 +11166,12 @@ resolve_callback(void* arg)
   }
 
  ignore:
+  if (uuid_entry)
+  {
+    avahi_free(uuid_key);
+    avahi_free(uuid_value);
+  }
+
   if (a->name) free((char*)a->name);
   if (a->type) free((char*)a->type);
   if (a->domain) free((char*)a->domain);
