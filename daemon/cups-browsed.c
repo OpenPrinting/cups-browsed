@@ -6935,7 +6935,7 @@ on_job_state (CupsNotifier *object,
 
       // The priority order for the PDLs is the same as in the
       // PPD generator in ppd/ppd-generator.c of libppd
-      document_format = (char *)malloc(sizeof(char) * 32);
+      document_format = (char *)calloc(32, sizeof(char));
       if (cupsArrayFind(pdl_list, "application/vnd.cups-pdf"))
 	strcpy(document_format, "application/vnd.cups-pdf");
       else if (cupsArrayFind(pdl_list, "image/urf"))
@@ -10951,7 +10951,7 @@ resolve_callback(void* arg)
   // Called whenever a service has been resolved successfully
 
   // New remote printer found
-  AvahiStringList *rp_entry, *adminurl_entry;
+  AvahiStringList *rp_entry = NULL, *adminurl_entry = NULL;
   char *rp_key, *rp_value, *adminurl_key, *adminurl_value;
 
   debug_printf("Avahi Resolver: Service '%s' of type '%s' in domain '%s' with host name '%s' and port %d on interface '%s' (%s).\n",
