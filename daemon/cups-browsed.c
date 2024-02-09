@@ -7815,8 +7815,11 @@ create_remote_printer_entry (const char *queue_name,
       p->prattrs = cfGetPrinterAttributes(p->uri, NULL, 0, NULL, 0, 1);
       debug_log_out(cf_get_printer_attributes_log);
       if (p->prattrs == NULL)
+      {
 	debug_printf("get-printer-attributes IPP call failed on printer %s (%s).\n",
 		     p->queue_name, p->uri);
+	goto fail;
+      }
     }
   }
   else
