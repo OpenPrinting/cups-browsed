@@ -6935,7 +6935,7 @@ on_job_state (CupsNotifier *object,
 
       // The priority order for the PDLs is the same as in the
       // PPD generator in ppd/ppd-generator.c of libppd
-      document_format = (char *)malloc(sizeof(char) * 32);
+      document_format = (char *)calloc(32, sizeof(char));
       if (cupsArrayFind(pdl_list, "application/vnd.cups-pdf"))
 	strcpy(document_format, "application/vnd.cups-pdf");
       else if (cupsArrayFind(pdl_list, "image/urf"))
@@ -10892,7 +10892,7 @@ resolve_callback(void* arg)
   AVAHI_GCC_UNUSED void* userdata = a->userdata;
 
   char ifname[IF_NAMESIZE];
-  AvahiStringList *uuid_entry, *printer_type_entry;
+  AvahiStringList *uuid_entry = NULL, *printer_type_entry;
   char *uuid_key, *uuid_value;
 
   debug_printf("resolve_callback() in THREAD %ld\n", pthread_self());
@@ -10954,7 +10954,7 @@ resolve_callback(void* arg)
   // Called whenever a service has been resolved successfully
 
   // New remote printer found
-  AvahiStringList *rp_entry, *adminurl_entry;
+  AvahiStringList *rp_entry = NULL, *adminurl_entry = NULL;
   char *rp_key, *rp_value, *adminurl_key, *adminurl_value;
 
   debug_printf("Avahi Resolver: Service '%s' of type '%s' in domain '%s' with host name '%s' and port %d on interface '%s' (%s).\n",
@@ -11169,6 +11169,12 @@ resolve_callback(void* arg)
   }
 
  ignore:
+  if (uuid_entry)
+  {
+    avahi_free(uuid_key);
+    avahi_free(uuid_value);
+  }
+
   if (a->name) free((char*)a->name);
   if (a->type) free((char*)a->type);
   if (a->domain) free((char*)a->domain);
