@@ -79,9 +79,7 @@ libtool. On Debian, Ubuntu, and distributions derived from them you
 could also install the "build-essential" package to auto-install most
 of these packages.
 
-Report bugs to
-
-    https://github.com/OpenPrinting/cups-browsed/issues
+Report bugs to [GitHub Issues for cups-browsed](https://github.com/OpenPrinting/cups-browsed/issues)
 
 See the "COPYING", "LICENCE", and "NOTICE" files for legal
 information. The license is the same as for CUPS, for a maximum of
