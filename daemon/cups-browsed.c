@@ -5975,6 +5975,13 @@ record_printer_options(const char *printer)
 		memmove(c, c + 1, strlen(c));
 	      if (*c) c ++;
 	    }
+
+	    if (strlen(buf) == 0)
+	    {
+	      attr = ippNextAttribute(response);
+	      continue;
+	    }
+
 	    debug_printf("   %s=%s\n", key, buf);
 	    p->num_options = cupsAddOption(key, buf, p->num_options,
 					   &(p->options));
