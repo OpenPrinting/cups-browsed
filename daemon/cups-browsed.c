@@ -5956,6 +5956,12 @@ record_printer_options(const char *printer)
       attr = ippFirstAttribute(response);
       while (attr)
       {
+	if (ippGetValueTag(attr) == IPP_TAG_NOVALUE)
+	{
+	  attr = ippNextAttribute(response);
+	  continue;
+	}
+
 	key = ippGetName(attr);
 	for (ptr = attrs_to_record; *ptr; ptr++)
 	  if (strcasecmp(key, *ptr) == 0 ||
