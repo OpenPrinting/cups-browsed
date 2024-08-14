@@ -1,4 +1,45 @@
-# CHANGES - OpenPrinting cups-browsed v2.0.0 - 2023-09-22
+# CHANGES - OpenPrinting cups-browsed v2.0.1 - 2024-08-15
+
+## CHANGES IN V2.0.1 (15th August 2024)
+
+- Ignore attributes with `IPP_TAG_NOVALUE`
+  We don't need to record attributes with `IPP_TAG_NOVALUE` value tag,
+  cupsd will decide what to use based on the incoming document (Pull
+  request #33).
+
+- Ignore attributes with empty values
+  Previously, if IPP attribute value was empty, cups-browsed saved the
+  attribute as printer option "<name>=0", e.g. `orientation-requested=0`.
+  Often `0` is invalid and as no cluster member printer has this value
+  therefore a job with this value gets rejected (Pull request #32).
+
+- README.md: Use MarkDown for link to bug tracker
+  (Pull request #31)
+
+- Initialize variables to not get used uninitialized
+  (Pull request #26)
+
+- Fix memory leak found by valgrind
+  (Pull request #26)
+
+- Fix the daemon crash when `get-printer-attributes` fails
+  cups-browsed crashed when it found a remote CUPS queue shared by
+  mDNS on local network, but IPP request for this queue failed. The
+  empty `prattrs` data structure is later accessed, which causes the
+  crash (Pull request #25).
+
+- Better handle damage of queues created by cups-browsed
+  cups-browsed-generated print queues are marked with a
+  "cups-browsed=true" attribute. Sometimes it gets lost and the queue
+  not considered cups-browsed-generated any more.
+  As queues with "implicitclass://..." device URI are always from
+  cups-browsed, ignore the missing flag and always restore them as
+  cups-browsed queues, so that cups-browsed assigns a destination
+  printer for each job (Issue #429)
+
+- Fix build with Avahi disabled
+  (Issue #19, Pull request #20)
+
 
 ## CHANGES IN V2.0.0 (22th September 2023)
 
