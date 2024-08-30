@@ -6,6 +6,7 @@ Wants=avahi-daemon.service network-online.target
 
 [Service]
 ExecStart=/usr/sbin/cups-browsed
+Slice=system-cups.slice
 
 [Install]
 WantedBy=multi-user.target
