@@ -116,7 +116,6 @@ static int  ldap_rebind_proc(LDAP *RebindLDAPHandle,
 #include <cups/cups.h>
 #include <cups/raster.h>
 #include <cupsfilters/ipp.h>
-#include <cupsfilters/ipp.h>
 #include <ppd/ppd.h>
 
 #include "cups-notifier.h"
