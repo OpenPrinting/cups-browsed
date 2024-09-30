@@ -111,5 +111,4 @@ PACKAGING THE SOFTWARE FOR OPERATING SYSTEM DISTRIBUTIONS
     `--enable-auto-setup-driverless-only` then.
 
     Otherwise cups-browsed is only needed for more advanced setups,
-    like printer clusters or support for legacy CUPS (< 1.6.x) on
-    remote servers or clients.
+    like printer clusters.

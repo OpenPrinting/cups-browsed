@@ -26,15 +26,6 @@ cups-browsed has the following functionality:
   several print dialogs use old CUPS APIs and therefore require
   permanent local queues to see such printers.
 
-- Auto-discover shared printers on remote CUPS servers running CUPS
-  1.5.x or older via legacy CUPS browsing. This is intended for
-  settings with print servers running long-term-support enterprise
-  distributions.
-
-- Broadcast shared local printers using legacy CUPS browsing (of CUPS
-  1.5.x) for settings with printing clients running long-term-support
-  enterprise distributions.
-
 - Creating printer clusters where jobs are printed to one single queue
   and get automatically passed on to a suitable member printer.
   
@@ -63,8 +54,8 @@ cups-browsed has the following functionality:
 
 - Highly configurable: Which printers are considered? For which type
   of printers queues are created? Cluster types and member printers?
-  which names auto-created queues should get? DNS-SD and/or legacy
-  browsing? ...
+  which names auto-created queues should get? DNS-SD and/or
+  BrowsePoll? ...
 
 - Multi-threading allows several tasks to be done in parallel and
   assures responsiveness of the daemon when there is a large amount of
@@ -154,43 +145,33 @@ Most of this is still valid for the current cups-browsed.
 ### HELPER DAEMON FOR BROWSING REMOTE CUPS PRINTERS AND IPP NETWORK PRINTERS
 
 From version 1.6.0 on in CUPS the CUPS broadcasting/browsing
-facility was dropped, in favour of Bonjour-based broadcasting of
-shared printers. This is done as Bonjour broadcasting of shared
+facility was dropped, in favour of DNS-SD-based broadcasting of
+shared printers. This is done as DNS-SD broadcasting of shared
 printers is a standard, established by the PWG (Printing Working
 Group, http://www.pwg.org/), and most other network services
 (shared file systems, shared media files/streams, remote desktop
-services, ...) are also broadcasted via Bonjour.
+services, ...) are also broadcasted via DNS-SD.
 
 Problem is that CUPS only broadcasts its shared printers but does
 not browse broadcasts of other CUPS servers to make the shared
 remote printers available locally without any configuration
 efforts. This is a regression compared to the old CUPS
 broadcasting/browsing. The intention of CUPS upstream is that the
-application's print dialogs browse the Bonjour broadcasts as an
+application's print dialogs browse the DNS-SD broadcasts as an
 AirPrint-capable iPhone does, but it will take its time until all
 toolkit developers add the needed functionality, and programs
 using old toolkits or no toolkits at all, or the command line stay
 uncovered.
 
-The solution is cups-browsed, a helper daemon running in parallel
-to the CUPS daemon which listens to Bonjour broadcasts of shared
-CUPS printers on remote machines in the local network via Avahi,
-and can also listen for (and send) CUPS Browsing broadcasts. For
-each reported remote printer it creates a local raw queue pointing
-to the remote printer so that the printer appears in local print
-dialogs and is also available for printing via the command
-line. As with the former CUPS broadcasting/browsing with this
-queue the driver on the server is used and the local print dialogs
-give access to all options of the server-side printer driver.
-
-Note that CUPS broadcasting/browsing is available for legacy
-support, to let the local CUPS daemon work seamlessly together
-with remote CUPS daemons of version 1.5.x and older which only
-support CUPS broadcasting/browsing. In networks with only CUPS
-1.6.x servers (or Ubuntu or Fedora/Red Hat servers with CUPS
-1.5.x) please use the native Bonjour broadcasting of your servers
-and cups-browsed, configured for Bonjour browsing only on the
-clients.
+The solution is cups-browsed, a helper daemon running in parallel to
+the CUPS daemon which listens to DNS-SD broadcasts of shared CUPS
+printers on remote machines in the local network via Avahi. For each
+reported remote printer it creates a local raw queue pointing to the
+remote printer so that the printer appears in local print dialogs and
+is also available for printing via the command line. As with the
+former CUPS broadcasting/browsing with this queue the driver on the
+server is used and the local print dialogs give access to all options
+of the server-side printer driver.
 
 Also high availability with redundant print servers and load
 balancing is supported. If there is more than one server providing
@@ -301,7 +282,7 @@ up. cups-browsed is also robust against any shutdown and restart
 of avahi-daemon.
 
 Here is some info on how cups-browsed works internally (first concept of a
-daemon which does only Bonjour browsing):
+daemon which does only DNS-SD browsing):
 
     - Daemon start
       o Wait for CUPS daemon if it is not running
@@ -357,7 +338,7 @@ appears, create new queue as <original name>@<server name without
 of the others by one with simple name (mark old queue disappeared
 with timeout now-1 sec and create new queue with simple name).
 
-Fill description of the created CUPS queue with the Bonjour
+Fill description of the created CUPS queue with the DNS-SD
 service name (= original description) and location with the server
 name without .local.
 

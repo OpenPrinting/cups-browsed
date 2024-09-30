@@ -938,7 +938,7 @@ while test $tries -lt $timeout; do
 done
 
 if test $tries -ge $timeout; then
-    echo "FAIL: CUPS browsed did not remove CUPS queue ${queue_prefix}_ippeve_1 for first test printer!"
+    echo "FAIL: cups-browsed did not remove CUPS queue ${queue_prefix}_ippeve_1 for first test printer!"
     clean_up 1
     exit 1
 fi
@@ -1021,7 +1021,7 @@ $runcups lpstat -v
 echo ""
 
 if test $tries -ge $timeout; then
-    echo "FAIL: CUPS browsed did not remove CUPS queue ${queue_prefix}_ippeve_2 for second test printer!"
+    echo "FAIL: cups-browsed did not remove CUPS queue ${queue_prefix}_ippeve_2 for second test printer!"
     clean_up 1
     exit 1
 fi
