@@ -6758,6 +6758,9 @@ create_remote_printer_entry (const char *queue_name,
 		     p->queue_name, p->uri);
 	goto fail;
       }
+
+      attr = ippFindAttribute(p->prattrs, "printer-make-and-model", IPP_TAG_TEXT);
+      p->make_model = attr ? strdup(ippGetString(attr, 0, NULL)) : NULL;
     }
   }
   else
@@ -7542,7 +7545,7 @@ create_queue(void* arg)
       debug_printf("Generated Default Attributes for local queue %s\n",
 		   p->queue_name);
     }
-    if (ppdfile == NULL)
+    if (ppdfile == NULL && make_model && strcmp(make_model, "Local Raw Printer"))
     {
       // If we do not want CUPS-generated PPDs or we cannot obtain a
       // CUPS-generated PPD, for example if CUPS does not create a
@@ -7734,7 +7737,7 @@ create_queue(void* arg)
 	debug_printf("Generated Default Attributes for local queue %s\n",
 		     p->queue_name);
       }
-      if (ppdfile == NULL)
+      if (ppdfile == NULL && make_model && strcmp(make_model, "Local Raw Printer"))
       {
 	// If we do not want CUPS-generated PPDs or we cannot obtain a
 	// CUPS-generated PPD, for example if CUPS does not create a
@@ -8004,6 +8007,11 @@ create_queue(void* arg)
       ppdfile = NULL;
     }
     ppdfile = strdup(buf);
+  }
+  else
+  {
+    // No PPD - define nickname as make_model for remote raw queue
+    p->nickname = p->make_model ? strdup(p->make_model) : strdup("Local Raw Printer");
   }
 
   // Create a new CUPS queue or modify the existing queue
