@@ -7511,7 +7511,7 @@ create_queue(void* arg)
     }
     else
     {
-      make_model = (char*)malloc(sizeof(char) * 256);
+      make_model = (char*)calloc(256, sizeof(char));
       printer_attributes = get_cluster_attributes(p->queue_name);
       if ((attr = ippFindAttribute(printer_attributes,
 				   "printer-make-and-model",
