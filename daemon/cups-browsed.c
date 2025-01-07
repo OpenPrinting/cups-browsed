@@ -7530,13 +7530,13 @@ create_queue(void* arg)
     }
     else
     {
-      make_model = (char*)calloc(256, sizeof(char));
+      make_model = (char*)malloc(sizeof(char) * 256);
+      *make_model = '\0'; // Empty string for strncat'ing to it
       printer_attributes = get_cluster_attributes(p->queue_name);
       if ((attr = ippFindAttribute(printer_attributes,
 				   "printer-make-and-model",
 				   IPP_TAG_TEXT)) != NULL)
-        strncpy(make_model, ippGetString(attr, 0, NULL),
-		sizeof(make_model) - 1);
+	strncat(make_model, ippGetString(attr, 0, NULL), 255);
       color = 0;
       duplex = 0;
       for (r = (remote_printer_t *)cupsArrayFirst(remote_printers);
@@ -7724,13 +7724,13 @@ create_queue(void* arg)
       }
       else
       {
-	make_model = (char*)malloc(sizeof(char)*256);
+	make_model = (char*)malloc(sizeof(char) * 256);
+	*make_model = '\0'; // Empty string for strncat'ing to it
 	printer_attributes = get_cluster_attributes(p->queue_name);
-	if((attr = ippFindAttribute(printer_attributes,
-				    "printer-make-and-model",
-				    IPP_TAG_TEXT)) != NULL)
-	  strncpy(make_model, ippGetString(attr, 0, NULL),
-		  sizeof(make_model) - 1);
+	if ((attr = ippFindAttribute(printer_attributes,
+				     "printer-make-and-model",
+				     IPP_TAG_TEXT)) != NULL)
+	  strncat(make_model, ippGetString(attr, 0, NULL), 255);
 	color = 0;
 	duplex = 0;
 	for (r = (remote_printer_t *)cupsArrayFirst(remote_printers);
