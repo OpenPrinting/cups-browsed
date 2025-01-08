@@ -1,4 +1,20 @@
-# CHANGES - OpenPrinting cups-browsed v2.1.0 - 2024-10-17
+# CHANGES - OpenPrinting cups-browsed v2.1.1 - 2025-01-08
+
+## CHANGES IN V2.1.1 (8th January 2025)
+
+- Do not use global HTTP connection to local CUPS
+  cups-browsed used a simgle HTTP connection to CUPS and preserved it
+  in a global variable throughout its whole life. With the addition of
+  multi-threading this caused race-conditions and especially
+  cups-browsed getting stuck in a busy loop. Now we create separate
+  HTTP connections each time we need one, to eliminate this problem
+  (Ubuntu bugs #2049315, #2067918, and #2073504, CUPS Issue #879).
+
+- Fix uninitialized make_model in create_queue()
+  Initialized the buffer by putting a terminating zero to its
+  beginning, also removed a wrong use of sizeof() (applying to pointer
+  no to buffer, Issue #42).
+
 
 ## CHANGES IN V2.1.0 (17th October 2024)
 
