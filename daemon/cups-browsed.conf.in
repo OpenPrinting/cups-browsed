@@ -745,3 +745,17 @@ BrowseRemoteProtocols @BROWSEREMOTEPROTOCOLS@
 # is 'Yes'.
 #
 # FrequentNetifUpdate Yes
+
+# BrowseOptionsUpdate directive defines how default printing options are updated when
+# cups-browsed is running. The value "None" uses default values from destination
+# at discovery and overrides them by values from the file "/var/cache/cups/cups-browsed-options-<queue-name>"
+# if it is present from the previous cups-browsed run. The value "Static" does not save default
+# options between runs and do not read them from file if the cached file exists. The default options
+# are statically set at the first discovery and cups-browsed restart is required to synchronize
+# new default options from destinations. The value "Dynamic" causes cups-browsed to update default
+# options at every BrowseInterval event to synchronize with destination's default options automatically.
+# With "Static" and "Dynamic" user are able to change default options values locally via "lpoptions". 
+#
+# BrowseOptionsUpdate None
+# BrowseOptionsUpdate Static
+# BrowseOptionsUpdate Dynamic

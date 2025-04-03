@@ -277,6 +277,17 @@ typedef enum autoshutdown_inactivity_type_e
   NO_JOBS
 } autoshutdown_inactivity_type_t;
 
+// How and when to take the options when recreating queue found by browsing:
+// NONE - from file at CacheDir
+// STATIC - from destination's IPP Get-Printer-Attributes response once the service is found
+// DYNAMIC - from destination's IPP Get-Printer-Attributes response at every browsing event defined by BrowseInterval
+typedef enum browse_options_update
+{
+  NONE = 0,
+  STATIC,
+  DYNAMIC
+} browse_options_update_t;
+
 typedef struct media_size_s
 {
   int x;
@@ -450,6 +461,7 @@ static int FrequentNetifUpdate = 1;
 #else
 static int FrequentNetifUpdate = 0;
 #endif
+static browse_options_update_t method = NONE;
 
 static int debug_stderr = 0;
 static int debug_logfile = 0;
@@ -6462,13 +6474,15 @@ on_printer_modified (CupsNotifier *object,
       }
       // The user has changed settings of a printer which we have generated,
       // backup the changes for the case of a crash or unclean shutdown of
-      // cups-browsed.
-      if (!p->no_autosave)
+      // cups-browsed if we don't want to get defaults from destination.
+      if (!p->no_autosave && method == NONE)
       {
 	debug_printf("Settings of printer %s got modified, doing backup.\n",
 		     p->queue_name);
 	p->no_autosave = 1; // Avoid infinite recursion
+
 	record_printer_options(p->queue_name);
+
 	p->no_autosave = 0;
       }
     }
@@ -7159,7 +7173,7 @@ remove_printer_entry(remote_printer_t *p)
     // Schedule this printer for updating the CUPS queue
     q->status = STATUS_TO_BE_CREATED;
     q->timeout = time(NULL) + TIMEOUT_IMMEDIATELY;
-    debug_printf("Printer %s (%s) diasappeared, replacing by backup on host %s, port %d with URI %s.\n",
+    debug_printf("Printer %s (%s) disappeared, replacing by backup on host %s, port %d with URI %s.\n",
 		 p->queue_name, p->uri, q->host, q->port, q->uri);
   }
   else
@@ -7636,9 +7650,10 @@ create_queue(void* arg)
 				      &p->options);
   }
 
-  // Loading saved option settings from last session
-  p->num_options = load_printer_options(p->queue_name, p->num_options,
-					&p->options);
+  // Loading saved option settings from last session if we want them
+  if (method == NONE)
+    p->num_options = load_printer_options(p->queue_name, p->num_options,
+					  &p->options);
 
   // Determine whether we have an IPP network printer. If not we
   // have remote CUPS queue(s) and so we use an implicit class for
@@ -8409,7 +8424,9 @@ update_cups_queues(gpointer unused)
 
 	    // Record the option settings to retrieve them when the remote
 	    // queue re-appears later or when cups-browsed gets started again
-	    record_printer_options(p->queue_name);
+	    // if we want to use local settings
+	    if (method == NONE)
+	      record_printer_options(p->queue_name);
 
 	    if (p->status != STATUS_TO_BE_RELEASED &&
 		!queue_overwritten(p))
@@ -9607,6 +9624,25 @@ examine_discovered_printer_record(const char *host,
       p->domain = strdup(domain);
       debug_printf("Switched over to newly discovered entry for this printer.\n");
     }
+    else if (method == DYNAMIC)
+    {
+      // in the end we can skip most free+strdup and use the same pointers for
+      // option update, but we need to free:
+      // - prattrs
+      // - options
+      // - nickname
+      free(p->prattrs);
+      cupsFreeOptions(p->num_options, p->options);
+      free(p->nickname);
+
+      p->prattrs = NULL;
+      p->nickname = NULL;
+      p->options = NULL;
+      p->num_options = 0;
+      p->status = STATUS_TO_BE_CREATED;
+      p->timeout = time(NULL) + TIMEOUT_IMMEDIATELY;
+      debug_printf("Updating printer capabilities for printer %s.\n", p->queue_name);
+    }
     else
       debug_printf("Staying with previously discovered entry for this printer.\n");
 
@@ -9631,9 +9667,11 @@ examine_discovered_printer_record(const char *host,
       queue_creation_handle_default(p->queue_name);
       // If this queue is disabled, re-enable it.
       enable_printer(p->queue_name);
-      // Record the options, to record any changes which happened
-      // while cups-browsed was not running
-      record_printer_options(p->queue_name);
+      // If we prefer options from local machine, record them,
+      // to record any changes which happened while cups-browsed
+      // was not running
+      if (method == NONE)
+	record_printer_options(p->queue_name);
     }
 
     // Gather extra info from our new discovery
@@ -12086,6 +12124,15 @@ read_configuration (const char *filename)
       else
 	debug_printf("Invalid value for pause between calls of update_cups_queues(): %d\n",
 		     t);
+    }
+    else if (!strcasecmp(line, "BrowseOptionsUpdate") && value)
+    {
+      if (!strcasecmp(value, "None"))
+        method = NONE;
+      else if (!strcasecmp(value, "Static"))
+        method = STATIC;
+      else if (!strcasecmp(value, "Dynamic"))
+        method = DYNAMIC;
     }
   }
 
