@@ -6640,6 +6640,8 @@ create_remote_printer_entry (const char *queue_name,
     return (NULL);
   }
 
+  debug_printf("create_remote_printer_entry(): Creating remote printer entry for %s: URI: %s; Host name: %s; IP: %s; Port: %d; Resource: %s; DNS-SD service name: %s; Service type: %s; Domanin: %s; Interface: %s; Family: %s; Make and model: %s; %s\n", queue_name, uri, host, ip, port, resource, service_name, type, domain, interface, (family == AF_INET ? "IPv4" : (family == AF_INET6 ? "IPv6" : "Unknown")), make_model, (is_cups_queue ? "Remote CUPS printer" : "IPP printer"));
+
   // Mark this as a queue to be created locally pointing to the printer
   if ((p = (remote_printer_t *)calloc(1, sizeof(remote_printer_t))) == NULL)
   {
@@ -7246,6 +7248,8 @@ create_queue(void* arg)
     return;
 
   pthread_rwlock_wrlock(&lock);
+
+  debug_printf("create_queue(): Creating a print queue: Name: %s; URI: %s\n", a->queue, a->uri);
 
   current_time = time(NULL);
 
@@ -9215,6 +9219,8 @@ examine_discovered_printer_record(const char *host,
     debug_printf("ERROR: examine_discovered_printer_record(): Input value missing!\n");
     return (NULL);
   }
+
+  debug_printf("examine_discovered_printer_record(): Discovered printer: Host name: %s; IP: %s; Port: %d; Resource: %s; DNS-SD service name: %s; Service type: %s; Domanin: %s; Interface: %s; Family: %s\n", host, ip, port, resource, service_name, type, domain, interface, (family == AF_INET ? "IPv4" : (family == AF_INET6 ? "IPv6" : "Unknown")));
 
   is_cups_queue = 0;
   memset(uri, 0, sizeof(uri));
