@@ -6832,7 +6832,8 @@ create_remote_printer_entry (const char *queue_name,
 	 ((!strcasestr(pdl, "application/vnd.hp-PCL") &&
 	   !strcasestr(pdl, "application/PCL") &&
 	   !strcasestr(pdl, "application/x-pcl")) ||
-	  ((!strncasecmp(make_model, "HP", 2) || // HP inkjets not supported
+	  (make_model &&
+	   (!strncasecmp(make_model, "HP", 2) || // HP inkjets not supported
 	    !strncasecmp(make_model, "Hewlett Packard", 15) ||
 	    !strncasecmp(make_model, "Hewlett-Packard", 15)) &&
 	   !strcasestr(make_model, "LaserJet") &&
