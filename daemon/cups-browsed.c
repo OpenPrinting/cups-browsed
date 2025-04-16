@@ -9203,7 +9203,6 @@ examine_discovered_printer_record(const char *host,
        *make_model = NULL;
   int color = 1, duplex = 1;
 #ifdef HAVE_AVAHI
-  char *fields[] = { "product", "usb_MDL", "ty", NULL }, **f;
   AvahiStringList *entry = NULL;
   char *key = NULL, *value = NULL;
   char *note_value = NULL;
@@ -9253,24 +9252,50 @@ examine_discovered_printer_record(const char *host,
   if (txt)
   {
     // Find make and model by the TXT record
-    for (f = fields; *f; f ++)
+    if ((entry = avahi_string_list_find((AvahiStringList *)txt, "ty")) != NULL)
     {
-      entry = avahi_string_list_find((AvahiStringList *)txt, *f);
-      if (entry)
+      avahi_string_list_get_pair(entry, &key, &value, NULL);
+      if (key && value && !strcasecmp(key, "ty") && strlen(value) >= 3)
+	make_model = strdup(value);
+      avahi_free(key);
+      avahi_free(value);
+    }
+    else if ((entry =
+	      avahi_string_list_find((AvahiStringList *)txt,
+				     "product")) != NULL)
+    {
+      avahi_string_list_get_pair(entry, &key, &value, NULL);
+      if (key && value && !strcasecmp(key, "product") && strlen(value) >= 3)
+      {
+	make_model = strdup(value + 1);
+	make_model[strlen(make_model) - 1] = '\0';
+      }
+      avahi_free(key);
+      avahi_free(value);
+    }
+    else if ((entry =
+	      avahi_string_list_find((AvahiStringList *)txt,
+				     "usb_MDL")) != NULL)
+    {
+      avahi_string_list_get_pair(entry, &key, &value, NULL);
+      if (key && value && !strcasecmp(key, "usb_MDL") && strlen(value) >= 3)
+	make_model = strdup(value);
+      avahi_free(key);
+      avahi_free(value);
+      if (make_model &&
+	  (entry =
+	   avahi_string_list_find((AvahiStringList *)txt,
+				  "usb_MFG")) != NULL)
       {
 	avahi_string_list_get_pair(entry, &key, &value, NULL);
-	if (key && value && !strcasecmp(key, *f) && strlen(value) >= 3)
+	if (key && value && !strcasecmp(key, "usb_MFG") && strlen(value) >= 3)
 	{
-	  if (!strcasecmp(key, "product"))
-	  {
-	    make_model = strdup(value + 1);
-	    make_model[strlen(make_model) - 1] = '\0'; 
-	  }
-	  else
-	    make_model = strdup(value);
-	  avahi_free(key);
-	  avahi_free(value);
-	  break;
+	  make_model =
+	    realloc(make_model, strlen(value) + strlen(make_model) + 2);
+	  memmove(make_model + strlen(value) + 1, make_model,
+		  strlen(make_model) + 1);
+	  strcpy(make_model, value);
+	  make_model[strlen(value)] = ' ';
 	}
 	avahi_free(key);
 	avahi_free(value);
