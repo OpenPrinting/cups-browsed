@@ -6798,8 +6798,13 @@ create_remote_printer_entry (const char *queue_name,
 	goto fail;
       }
 
-      attr = ippFindAttribute(p->prattrs, "printer-make-and-model", IPP_TAG_TEXT);
-      p->make_model = attr ? strdup(ippGetString(attr, 0, NULL)) : NULL;
+      if ((attr = ippFindAttribute(p->prattrs, "printer-make-and-model", IPP_TAG_TEXT)) != NULL)
+      {
+	if (p->make_model)
+	  free(p->make_model);
+
+	p->make_model = strdup(strdup(ippGetString(attr, 0, NULL));
+      }
     }
   }
   else
