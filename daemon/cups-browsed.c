@@ -6803,7 +6803,7 @@ create_remote_printer_entry (const char *queue_name,
 	if (p->make_model)
 	  free(p->make_model);
 
-	p->make_model = strdup(strdup(ippGetString(attr, 0, NULL));
+	p->make_model = strdup(ippGetString(attr, 0, NULL));
       }
     }
   }
