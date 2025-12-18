@@ -647,6 +647,23 @@ EOF
     export LC_MESSAGES
 
     #
+    # Check syntax of CUPS config files...
+    #
+
+    echo "Testing CUPS config files:"
+    echo "    $runcups $BASE/bin/cupsd -t -s $BASE/cups-files.conf"
+    echo ""
+
+    $runcups $BASE/bin/cupsd -t -s $BASE/cups-files.conf
+
+    echo "    $runcups $BASE/bin/cupsd -t -c $BASE/cupsd.conf"
+    echo ""
+
+    $runcups $BASE/bin/cupsd -t -c $BASE/cupsd.conf
+
+    echo ""
+
+    #
     # Start the CUPS server; run as foreground daemon in the background...
     #
 
