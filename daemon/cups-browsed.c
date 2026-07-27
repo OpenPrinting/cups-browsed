@@ -2803,12 +2803,14 @@ generate_cluster_conflicts(char *cluster_name,
 		continue;
 	      if (!strcmp(opt1, "Gray") || !strcmp(opt2, "Gray"))
 		continue;
-	      sprintf(constraint, "*UIConstraints: *%s %s *%s %s\n",
+	      snprintf(constraint, sizeof(constraint),
+		      "*UIConstraints: *%s %s *%s %s\n",
 		      ppd_keywords[i],
 		      opt1,ppd_keywords[k], opt2);
 	      if (!cupsArrayFind(conflict_pairs, constraint))
 		cupsArrayAdd(conflict_pairs, constraint);
-	      sprintf(constraint, "*UIConstraints: *%s %s *%s %s\n",
+	      snprintf(constraint, sizeof(constraint),
+		      "*UIConstraints: *%s %s *%s %s\n",
 		      ppd_keywords[k],
 		      opt2, ppd_keywords[i], opt1);
 	      if (!cupsArrayFind(conflict_pairs, constraint))
