@@ -1131,6 +1131,12 @@ pwg_ppdize_name(const char *ipp,      // I - IPP keyword
   char  *ptr,       // Pointer into name buffer
         *end;       // End of name buffer
 
+  if (ipp == NULL || *ipp == '\0')
+  {
+    *name = '\0';
+    return;
+  }
+
   *name = (char)toupper(*ipp++);
 
   for (ptr = name + 1, end = name + namesize - 1; *ipp && ptr < end;)
@@ -2008,12 +2014,14 @@ get_mediadata(ipp_t *printer_attributes,
 				  (cups_afree_func_t)free)) == NULL)
     return (NULL);
   if ((attr = ippFindAttribute(printer_attributes, requested_option,
-			       IPP_TAG_ZERO)) != NULL
+			       IPP_TAG_KEYWORD)) != NULL
       && (count = ippGetCount(attr)) > 1)
   {
     for (i = 0, count = ippGetCount(attr); i < count; i ++)
     {
       keyword = ippGetString(attr, i, NULL);
+      if (keyword == NULL)
+	continue;
       pwg_ppdize_name(keyword, ppdname, sizeof(ppdname));
       cupsArrayAdd(media_data, ppdname);
     }
