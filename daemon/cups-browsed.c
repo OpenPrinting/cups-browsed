@@ -1422,7 +1422,7 @@ add_enum_attributes(char* cluster_name,
 			      (cups_acopy_func_t)strdup,
 			      (cups_afree_func_t)free)) == NULL)
       return ;
-    str = malloc(sizeof(char) * 10);
+    str = malloc(sizeof(char) * 16);
     num_value = 0;
     for (p = (remote_printer_t *)cupsArrayFirst(remote_printers);
          p; p = (remote_printer_t *)cupsArrayNext(remote_printers))
@@ -1439,7 +1439,7 @@ add_enum_attributes(char* cluster_name,
         for (i = 0; i < count; i ++)
 	{
           value = ippGetInteger(attr, i);
-          sprintf(str,"%d",value);
+          snprintf(str, 16, "%d", value);
           if (!cupsArrayFind(list, (void *)str))
 	  {
             cupsArrayAdd(list, (void *)str);
@@ -1497,7 +1497,7 @@ add_margin_attributes(char* cluster_name,
 			      (cups_acopy_func_t)strdup,
 			      (cups_afree_func_t)free)) == NULL)
       return ;
-    str = malloc(sizeof(char)*10);
+    str = malloc(sizeof(char)*16);
     num_value = 0;
     for (p = (remote_printer_t *)cupsArrayFirst(remote_printers);
          p; p = (remote_printer_t *)cupsArrayNext(remote_printers))
@@ -1514,7 +1514,7 @@ add_margin_attributes(char* cluster_name,
         for (i = 0; i < count; i++)
 	{
           value = ippGetInteger(attr, i);
-          sprintf(str,"%d",value);
+          snprintf(str, 16, "%d", value);
           if (!cupsArrayFind(list, (void *)str))
 	  {
             cupsArrayAdd(list, (void *)str);
