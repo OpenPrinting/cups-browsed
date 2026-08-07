@@ -1271,13 +1271,15 @@ add_tagzero_attributes(char* cluster_name,
 	  p->status ==  STATUS_TO_BE_RELEASED)
 	continue;
       if ((attr = ippFindAttribute(p->prattrs, attributes[attr_no],
-				   IPP_TAG_ZERO)) != NULL)
+				   IPP_TAG_KEYWORD)) != NULL)
       {
 	count = ippGetCount(attr);
 	for(i = 0; i < count; i ++)
 	{
 	  // Pick next format from attribute
 	  str = ippGetString(attr, i, NULL);
+	  if (str == NULL)
+	    continue;
 	  // Add format to list, skip duplicates
 	  if (!cupsArrayFind(list, (void *)str))
 	  {
