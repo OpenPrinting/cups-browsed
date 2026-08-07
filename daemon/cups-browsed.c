@@ -1278,6 +1278,8 @@ add_tagzero_attributes(char* cluster_name,
 	{
 	  // Pick next format from attribute
 	  str = ippGetString(attr, i, NULL);
+	  if (str == NULL)
+	    continue;
 	  // Add format to list, skip duplicates
 	  if (!cupsArrayFind(list, (void *)str))
 	  {
