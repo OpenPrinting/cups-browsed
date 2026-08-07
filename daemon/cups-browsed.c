@@ -1271,7 +1271,7 @@ add_tagzero_attributes(char* cluster_name,
 	  p->status ==  STATUS_TO_BE_RELEASED)
 	continue;
       if ((attr = ippFindAttribute(p->prattrs, attributes[attr_no],
-				   IPP_TAG_KEYWORD)) != NULL)
+				   IPP_TAG_ZERO)) != NULL)
       {
 	count = ippGetCount(attr);
 	for(i = 0; i < count; i ++)
