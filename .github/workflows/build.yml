@@ -1,0 +1,144 @@
+# =============================================================================
+# Multi-Architecture / multi-CUPS Build & Test Workflow for cups-browsed
+#
+# Matrix: 4 architectures x 2 CUPS releases = 8 combinations.
+#   architectures: amd64, arm64 (native runners); armhf, riscv64 (QEMU)
+#   CUPS releases: 2.4.x (distro libcups2-dev), 2.5.x (OpenPrinting/cups master)
+#
+# cups-browsed does NOT make sense on CUPS 3.x, so libcups3 is intentionally
+# excluded (2 CUPS releases, not 3).
+#
+# cups-browsed needs libcups AND libcupsfilters AND libppd.  For the source-CUPS
+# leg the distro libcupsfilters-dev / libppd-dev are the wrong ABI, so
+# ci/ci-setup.sh builds the whole chain (pdfio -> libcupsfilters -> libppd) from
+# source against the active CUPS.  All the per-combination work lives in that
+# script so the legs differ only in which CUPS is provided and whether they run
+# under emulation.
+# =============================================================================
+name: Build and Test (cups-browsed, Multi-Architecture, Multi-CUPS)
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-matrix:
+    name: Build & Test (${{ matrix.arch }}, ${{ matrix.cups }})
+    runs-on: ${{ matrix.runs-on }}
+    # The source-2.5.x leg builds its CUPS / libcupsfilters / libppd from
+    # OpenPrinting @master, an unpinned moving target: a transient breakage there
+    # reddens the leg through no fault of cups-browsed.  Keep the distro
+    # system-2x leg required (blocking), but let the source-@master leg report
+    # without blocking the PR.  ci-setup.sh annotates each failure as
+    # UPSTREAM-DEP-FAILED vs CUPS-BROWSED-FAILED so a real cups-browsed
+    # regression on the source leg is still visible even while non-blocking.
+    continue-on-error: ${{ matrix.cups != 'system-2x' }}
+    # Building the CUPS / libcupsfilters / libppd stack from source under QEMU is
+    # slow; allow plenty.
+    timeout-minutes: 360
+
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64, armhf, riscv64]
+        cups: [system-2x, source-2.5.x]
+        include:
+          - arch: amd64
+            runs-on: ubuntu-latest
+            use-qemu: false
+          - arch: arm64
+            runs-on: ubuntu-24.04-arm
+            use-qemu: false
+          - arch: armhf
+            runs-on: ubuntu-latest
+            use-qemu: true
+            qemu-arch: armv7
+          - arch: riscv64
+            runs-on: ubuntu-latest
+            use-qemu: true
+            qemu-arch: riscv64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ==========================================
+      # NATIVE EXECUTION (amd64 and arm64)
+      # ==========================================
+      - name: Build (Native)
+        if: matrix.use-qemu == false
+        env:
+          CUPS_KIND: ${{ matrix.cups }}
+          EMULATED: "0"
+        run: |
+          set -ex
+          sh ci/ci-setup.sh deps
+          sh ci/ci-setup.sh cups "${{ matrix.cups }}"
+          sh ci/ci-setup.sh pdfio
+          sh ci/ci-setup.sh libcupsfilters "${{ matrix.cups }}"
+          sh ci/ci-setup.sh libppd "${{ matrix.cups }}"
+          sh ci/ci-setup.sh build-cups-browsed
+
+      # NOTE: cups-browsed's functional suite (test/run-tests.sh) is a full
+      # DNS-SD queue-creation + print round-trip against a private cupsd and two
+      # ippeveprinter instances.  It needs a live D-Bus + Avahi/mDNS environment
+      # that is not reliably available on GitHub runners, so it is intentionally
+      # not run here; wiring it up is tracked as a follow-up.  This matrix
+      # verifies that cups-browsed builds and links across every supported
+      # architecture and CUPS release - which is what caught the CUPS 2.5 API
+      # breakage this workflow was first added against.
+
+      - name: Upload test artifacts (Native)
+        if: matrix.use-qemu == false && always()
+        continue-on-error: true
+        timeout-minutes: 5
+        uses: actions/upload-artifact@v4
+        with:
+          name: cups-browsed-logs-${{ matrix.arch }}-${{ matrix.cups }}
+          path: |
+            config.log
+          if-no-files-found: ignore
+
+      # ==========================================
+      # EMULATED EXECUTION (armhf and riscv64)
+      # Build/link only - the DNS-SD functional test is unreliable under QEMU.
+      # ==========================================
+      - name: Build (Emulated)
+        if: matrix.use-qemu == true
+        uses: uraimo/run-on-arch-action@v3
+        with:
+          arch: ${{ matrix.qemu-arch }}
+          distro: ubuntu24.04
+          githubToken: ${{ github.token }}
+          install: |
+            apt-get update --fix-missing -y
+            DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata ca-certificates git
+          run: |
+            set -ex
+            export CUPS_KIND="${{ matrix.cups }}"
+            export EMULATED=1
+            sh ci/ci-setup.sh deps
+            sh ci/ci-setup.sh cups "${{ matrix.cups }}"
+            sh ci/ci-setup.sh pdfio
+            sh ci/ci-setup.sh libcupsfilters "${{ matrix.cups }}"
+            sh ci/ci-setup.sh libppd "${{ matrix.cups }}"
+            sh ci/ci-setup.sh build-cups-browsed
+
+      - name: Upload test artifacts (Emulated)
+        if: matrix.use-qemu == true && always()
+        continue-on-error: true
+        timeout-minutes: 5
+        uses: actions/upload-artifact@v4
+        with:
+          name: cups-browsed-logs-${{ matrix.arch }}-${{ matrix.cups }}
+          path: |
+            config.log
+          if-no-files-found: ignore
