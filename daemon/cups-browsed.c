@@ -8477,6 +8477,7 @@ update_cups_queues(gpointer unused)
 		  disable_printer(p->queue_name,
 				  "Printer disappeared or cups-browsed shutdown");
 		// Schedule the removal of the queue for later
+		httpClose(http);
 		if (in_shutdown == 0)
 		{
 		  current_time = time(NULL);
@@ -8505,6 +8506,7 @@ update_cups_queues(gpointer unused)
 		  is_cups_default_printer(p->queue_name))
 	      {
 		// Schedule the removal of the queue for later
+		httpClose(http);
 		if (in_shutdown == 0)
 		{
 		  current_time = time(NULL);
@@ -8547,6 +8549,7 @@ update_cups_queues(gpointer unused)
 		  current_time = time(NULL);
 		  p->timeout = current_time + TIMEOUT_RETRY;
 		  p->no_autosave = 0;
+		  httpClose(http);
 		  break;
 		}
 	      }
