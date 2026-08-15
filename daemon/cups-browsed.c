@@ -52,6 +52,26 @@
 #include <cupsfilters/ipp.h>
 #include <ppd/ppd.h>
 
+/*
+ * CUPS 2.5 renamed the printer-type flags to CUPS_PTYPE_* and, together with
+ * the removal of implicit classes, dropped CUPS_PRINTER_NOT_SHARED and
+ * CUPS_PRINTER_IMPLICIT.  The deprecated operation/state aliases used elsewhere
+ * in this file were replaced in-place with their canonical IPP_OP_* /
+ * IPP_PSTATE_* / IPP_JSTATE_* / HTTP_ENCRYPTION_* names (which exist in both
+ * CUPS 2.4 and 2.5), but these two printer-type flags have no name that works
+ * on both, so map them here.  CUPS_PRINTER_IMPLICIT collapses to 0 - a no-op in
+ * the printer-type mask it is OR'd into - since implicit classes no longer
+ * exist on CUPS 2.5.
+ */
+#if CUPS_VERSION_MAJOR > 2 || (CUPS_VERSION_MAJOR == 2 && CUPS_VERSION_MINOR >= 5)
+#  ifndef CUPS_PRINTER_NOT_SHARED
+#    define CUPS_PRINTER_NOT_SHARED CUPS_PTYPE_NOT_SHARED
+#  endif
+#  ifndef CUPS_PRINTER_IMPLICIT
+#    define CUPS_PRINTER_IMPLICIT 0
+#  endif
+#endif
+
 #include "cups-notifier.h"
 
 // Attribute to mark a CUPS queue as created by us
@@ -4165,7 +4185,7 @@ create_subscription ()
     return (0);
   }
 
-  req = ippNewRequest (IPP_CREATE_PRINTER_SUBSCRIPTION);
+  req = ippNewRequest (IPP_OP_CREATE_PRINTER_SUBSCRIPTIONS);
   ippAddString (req, IPP_TAG_OPERATION, IPP_TAG_URI,
 		"printer-uri", NULL, "/");
   ippAddString (req, IPP_TAG_SUBSCRIPTION, IPP_TAG_KEYWORD,
@@ -4210,7 +4230,7 @@ renew_subscription (int id)
     return (FALSE);
   }
 
-  req = ippNewRequest (IPP_RENEW_SUBSCRIPTION);
+  req = ippNewRequest (IPP_OP_RENEW_SUBSCRIPTION);
   ippAddInteger (req, IPP_TAG_OPERATION, IPP_TAG_INTEGER,
 		 "notify-subscription-id", id);
   ippAddString (req, IPP_TAG_OPERATION, IPP_TAG_URI,
@@ -4265,7 +4285,7 @@ cancel_subscription (int id)
     return;
   }
 
-  req = ippNewRequest (IPP_CANCEL_SUBSCRIPTION);
+  req = ippNewRequest (IPP_OP_CANCEL_SUBSCRIPTION);
   ippAddString (req, IPP_TAG_OPERATION, IPP_TAG_URI,
 		"printer-uri", NULL, "/");
   ippAddInteger (req, IPP_TAG_OPERATION, IPP_TAG_INTEGER,
@@ -4373,7 +4393,7 @@ is_disabled(const char *printer,
   ipp_t *request, *response;
   ipp_attribute_t *attr;
   const char *pname = NULL;
-  ipp_pstate_t pstate = IPP_PRINTER_IDLE;
+  ipp_pstate_t pstate = IPP_PSTATE_IDLE;
   const char *p;
   char *pstatemsg = NULL;
   static const char *pattrs[] =
@@ -4395,7 +4415,7 @@ is_disabled(const char *printer,
     return (NULL);
   }
 
-  request = ippNewRequest(CUPS_GET_PRINTERS);
+  request = ippNewRequest(IPP_OP_CUPS_GET_PRINTERS);
   ippAddStrings(request, IPP_TAG_OPERATION, IPP_TAG_KEYWORD,
 		"requested-attributes",
 		sizeof(pattrs) / sizeof(pattrs[0]),
@@ -4413,7 +4433,7 @@ is_disabled(const char *printer,
       if (attr == NULL)
 	break;
       pname = NULL;
-      pstate = IPP_PRINTER_IDLE;
+      pstate = IPP_PSTATE_IDLE;
       if (pstatemsg)
       {
 	free(pstatemsg);
@@ -4453,8 +4473,8 @@ is_disabled(const char *printer,
       {
 	switch (pstate)
 	{
-	  case IPP_PRINTER_IDLE:
-	  case IPP_PRINTER_PROCESSING:
+	  case IPP_PSTATE_IDLE:
+	  case IPP_PSTATE_PROCESSING:
 	      ippDelete(response);
 	      if (pstatemsg != NULL)
 	      {
@@ -4462,7 +4482,7 @@ is_disabled(const char *printer,
 		pstatemsg = NULL;
 	      }
 	      return (NULL);
-	  case IPP_PRINTER_STOPPED:
+	  case IPP_PSTATE_STOPPED:
 	      ippDelete(response);
 	      if (reason == NULL)
 		return (pstatemsg);
@@ -4523,7 +4543,7 @@ enable_printer (const char *printer)
 
   httpAssembleURIf(HTTP_URI_CODING_ALL, uri, sizeof(uri), "ipp", NULL,
 		   "localhost", 0, "/printers/%s", printer);
-  request = ippNewRequest (IPP_RESUME_PRINTER);
+  request = ippNewRequest (IPP_OP_RESUME_PRINTER);
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
 		"printer-uri", NULL, uri);
   ippDelete(cupsDoRequest (http, request, "/admin/"));
@@ -4562,7 +4582,7 @@ disable_printer (const char *printer,
     reason = "Disabled by cups-browsed";
   httpAssembleURIf(HTTP_URI_CODING_ALL, uri, sizeof(uri), "ipp", NULL,
 		   "localhost", 0, "/printers/%s", printer);
-  request = ippNewRequest (IPP_PAUSE_PRINTER);
+  request = ippNewRequest (IPP_OP_PAUSE_PRINTER);
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
 		"printer-uri", NULL, uri);
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_TEXT,
@@ -4635,7 +4655,7 @@ get_cups_default_printer()
     return (NULL);
   }
 
-  request = ippNewRequest(CUPS_GET_DEFAULT);
+  request = ippNewRequest(IPP_OP_CUPS_GET_DEFAULT);
   // Default user
   ippAddString(request, IPP_TAG_OPERATION, IPP_TAG_NAME,
 	       "requesting-user-name", NULL, cupsUser());
@@ -5547,7 +5567,7 @@ on_job_state (CupsNotifier *object,
   ipp_t *request, *response, *printer_attributes = NULL;
   ipp_attribute_t *attr;
   const char *pname = NULL;
-  ipp_pstate_t pstate = IPP_PRINTER_IDLE;
+  ipp_pstate_t pstate = IPP_PSTATE_IDLE;
   int paccept = 0;
   int num_jobs, min_jobs = 99999999;
   char destination_uri[1024];
@@ -5585,7 +5605,7 @@ on_job_state (CupsNotifier *object,
   debug_printf("[CUPS Notification] Job State: %s\n",
 	       job_state_reasons);
   debug_printf("[CUPS Notification] Job is processing: %s\n",
-	       job_state == IPP_JOB_PROCESSING ? "Yes" : "No");
+	       job_state == IPP_JSTATE_PROCESSING ? "Yes" : "No");
 
   if (terminating)
   {
@@ -5621,7 +5641,7 @@ on_job_state (CupsNotifier *object,
     }
   }
 
-  if (job_id != 0 && job_state == IPP_JOB_PROCESSING)
+  if (job_id != 0 && job_state == IPP_JSTATE_PROCESSING)
   {
     // Printer started processing a job, check if it uses the implicitclass
     // backend and if so, we select the remote queue to which to send the job
@@ -5745,7 +5765,7 @@ on_job_state (CupsNotifier *object,
 	    debug_printf("IPP request to %s:%d successful.\n", p->host,
 			 p->port);
 	    pname = NULL;
-	    pstate = IPP_PRINTER_IDLE;
+	    pstate = IPP_PSTATE_IDLE;
 	    paccept = 0;
 	    for (attr = ippFirstAttribute(response); attr != NULL;
 		 attr = ippNextAttribute(response))
@@ -5755,7 +5775,7 @@ on_job_state (CupsNotifier *object,
 	      if (attr == NULL)
 		break;
 	      pname = NULL;
-	      pstate = IPP_PRINTER_IDLE;
+	      pstate = IPP_PSTATE_IDLE;
 	      paccept = 0;
 	      got_printer_info = 0;
 	      while (attr != NULL && ippGetGroupTag(attr) ==
@@ -5791,7 +5811,7 @@ on_job_state (CupsNotifier *object,
 			     p->uri, p->host, p->port);
 		switch (pstate)
 		{
-		  case IPP_PRINTER_IDLE:
+		  case IPP_PSTATE_IDLE:
 		      valid_dest_found = 1;
 		      dest_host = p->ip ? p->ip : p->host;
 		      strncpy(destination_uri, p->uri,
@@ -5803,7 +5823,7 @@ on_job_state (CupsNotifier *object,
 		      debug_printf("Printer %s on host %s, port %d is idle, take this as destination and stop searching.\n",
 				   p->uri, p->host, p->port);
 		      break;
-		  case IPP_PRINTER_PROCESSING:
+		  case IPP_PSTATE_PROCESSING:
 		      valid_dest_found = 1;
 		      if (LoadBalancingType == QUEUE_ON_SERVERS)
 		      {
@@ -5811,7 +5831,7 @@ on_job_state (CupsNotifier *object,
 			http_printer =
 			  httpConnectEncryptShortTimeout
 			    (p->ip ? p->ip : p->host, p->port,
-			     HTTP_ENCRYPT_IF_REQUESTED);
+			     HTTP_ENCRYPTION_IF_REQUESTED);
 			if (http_printer)
 			{
 			  num_jobs = get_number_of_jobs(http_printer, p->uri, 0,
@@ -5838,7 +5858,7 @@ on_job_state (CupsNotifier *object,
 			debug_printf("Printer %s on host %s, port %d is printing.\n",
 				     p->uri, p->host, p->port);
 		      break;
-		  case IPP_PRINTER_STOPPED:
+		  case IPP_PSTATE_STOPPED:
 		      debug_printf("Printer %s on host %s, port %d is disabled, skip it.\n",
 				   p->uri, p->host, p->port);
 		      break;
@@ -5855,7 +5875,7 @@ on_job_state (CupsNotifier *object,
 	    ippDelete(response);
 	    response = NULL;
 
-	    if (pstate == IPP_PRINTER_IDLE && paccept)
+	    if (pstate == IPP_PSTATE_IDLE && paccept)
 	    {
 	      q->last_printer = i;
 	      break;
@@ -6033,7 +6053,7 @@ on_job_state (CupsNotifier *object,
       cfFreeResolution(max_res, NULL);
       cfFreeResolution(min_res, NULL);
 
-      request = ippNewRequest(CUPS_ADD_MODIFY_PRINTER);
+      request = ippNewRequest(IPP_OP_CUPS_ADD_MODIFY_PRINTER);
       httpAssembleURIf(HTTP_URI_CODING_ALL, uri, sizeof(uri), "ipp", NULL,
 		       "localhost", 0, "/printers/%s", printer);
       ippAddString(request, IPP_TAG_OPERATION, IPP_TAG_URI,
@@ -7420,7 +7440,7 @@ create_queue(void* arg)
 	  debug_printf("Setting printer-is-shared bit to make this queue permanent.\n");
 	else
 	  debug_printf("Unsetting printer-is-shared bit.\n");
-	request = ippNewRequest(CUPS_ADD_MODIFY_PRINTER);
+	request = ippNewRequest(IPP_OP_CUPS_ADD_MODIFY_PRINTER);
 	ippAddString(request, IPP_TAG_OPERATION, IPP_TAG_URI,
 		     "printer-uri", NULL, uri);
 	ippAddString(request, IPP_TAG_OPERATION, IPP_TAG_NAME,
@@ -7483,7 +7503,7 @@ create_queue(void* arg)
 	  goto end;
 	}
 	// No jobs, remove the CUPS queue
-	request = ippNewRequest(CUPS_DELETE_PRINTER);
+	request = ippNewRequest(IPP_OP_CUPS_DELETE_PRINTER);
 	ippAddString(request, IPP_TAG_OPERATION, IPP_TAG_URI,
 		     "printer-uri", NULL, uri);
 	ippAddString(request, IPP_TAG_OPERATION, IPP_TAG_NAME,
@@ -8073,7 +8093,7 @@ create_queue(void* arg)
   }
 
   // Create a new CUPS queue or modify the existing queue
-  request = ippNewRequest(CUPS_ADD_MODIFY_PRINTER);
+  request = ippNewRequest(IPP_OP_CUPS_ADD_MODIFY_PRINTER);
   ippAddString(request, IPP_TAG_OPERATION, IPP_TAG_URI,
 	       "printer-uri", NULL, uri);
   // Default user
@@ -8081,7 +8101,7 @@ create_queue(void* arg)
 	       "requesting-user-name", NULL, cupsUser());
   // Queue should be enabled ...
   ippAddInteger(request, IPP_TAG_PRINTER, IPP_TAG_ENUM, "printer-state",
-		IPP_PRINTER_IDLE);
+		IPP_PSTATE_IDLE);
   // ... and accepting jobs
   ippAddBoolean(request, IPP_TAG_PRINTER, "printer-is-accepting-jobs", 1);
   // Location (only if the remote server actually provides a location string)
@@ -8172,7 +8192,7 @@ create_queue(void* arg)
   // queue is configurable via the NewIPPPrinterQueuesShared directive
   // in cups-browsed.conf
 
-  request = ippNewRequest(CUPS_ADD_MODIFY_PRINTER);
+  request = ippNewRequest(IPP_OP_CUPS_ADD_MODIFY_PRINTER);
   ippAddString(request, IPP_TAG_OPERATION, IPP_TAG_URI,
 	       "printer-uri", NULL, uri);
   ippAddString(request, IPP_TAG_OPERATION, IPP_TAG_NAME,
@@ -8231,7 +8251,7 @@ create_queue(void* arg)
   if (want_raw)
   {
     debug_printf("Removing local PPD file for printer %s\n", p->queue_name);
-    request = ippNewRequest(CUPS_ADD_MODIFY_PRINTER);
+    request = ippNewRequest(IPP_OP_CUPS_ADD_MODIFY_PRINTER);
     ippAddString(request, IPP_TAG_OPERATION, IPP_TAG_URI,
 		 "printer-uri", NULL, uri);
     ippAddString(request, IPP_TAG_OPERATION, IPP_TAG_NAME,
@@ -8522,7 +8542,7 @@ update_cups_queues(gpointer unused)
 	      // No jobs, remove the CUPS queue
 	      debug_printf("Removing local CUPS queue %s (%s).\n",
 			   p->queue_name, p->uri);
-	      request = ippNewRequest(CUPS_DELETE_PRINTER);
+	      request = ippNewRequest(IPP_OP_CUPS_DELETE_PRINTER);
 	      // Printer URI: ipp://localhost/printers/<queue name>
 	      httpAssembleURIf(HTTP_URI_CODING_ALL, uri, sizeof(uri), "ipp",
 			       NULL, "localhost", 0, "/printers/%s",
@@ -10876,7 +10896,7 @@ browse_poll_get_printers (browsepoll_t *context,
   debug_printf ("cups-browsed [BrowsePoll %s:%d]: CUPS-Get-Printers\n",
 		context->server, context->port);
 
-  request = ippNewRequest(CUPS_GET_PRINTERS);
+  request = ippNewRequest(IPP_OP_CUPS_GET_PRINTERS);
   if (context->major > 0)
   {
     debug_printf("cups-browsed [BrowsePoll %s:%d]: setting IPP version %d.%d\n",
@@ -10978,7 +10998,7 @@ browse_poll_create_subscription (browsepoll_t *context,
   if (http == NULL)
     return;
 
-  request = ippNewRequest(IPP_CREATE_PRINTER_SUBSCRIPTION);
+  request = ippNewRequest(IPP_OP_CREATE_PRINTER_SUBSCRIPTIONS);
   if (context->major > 0)
   {
     debug_printf("cups-browsed [BrowsePoll %s:%d]: setting IPP version %d.%d\n",
@@ -11047,7 +11067,7 @@ browse_poll_cancel_subscription (browsepoll_t *context)
 {
   ipp_t *request, *response = NULL;
   http_t *http = httpConnectEncryptShortTimeout (context->server, context->port,
-						 HTTP_ENCRYPT_IF_REQUESTED);
+						 HTTP_ENCRYPTION_IF_REQUESTED);
 
   if (http == NULL)
   {
@@ -11061,7 +11081,7 @@ browse_poll_cancel_subscription (browsepoll_t *context)
   debug_printf ("cups-browsed [BrowsePoll %s:%d]: IPP-Cancel-Subscription\n",
 		context->server, context->port);
 
-  request = ippNewRequest(IPP_CANCEL_SUBSCRIPTION);
+  request = ippNewRequest(IPP_OP_CANCEL_SUBSCRIPTION);
   if (context->major > 0)
   {
     debug_printf("cups-browsed [BrowsePoll %s:%d]: setting IPP version %d.%d\n",
@@ -11104,7 +11124,7 @@ browse_poll_get_notifications (browsepoll_t *context,
   if (http == NULL)
     return (FALSE);
 
-  request = ippNewRequest(IPP_GET_NOTIFICATIONS);
+  request = ippNewRequest(IPP_OP_GET_NOTIFICATIONS);
   if (context->major > 0)
   {
     debug_printf("cups-browsed [BrowsePoll %s:%d]: setting IPP version %d.%d\n",
@@ -11213,7 +11233,7 @@ browse_poll (gpointer data)
   res_init ();
 
   http = httpConnectEncryptShortTimeout (context->server, context->port,
-					 HTTP_ENCRYPT_IF_REQUESTED);
+					 HTTP_ENCRYPTION_IF_REQUESTED);
   if (http == NULL)
   {
     debug_printf("cups-browsed [BrowsePoll %s:%d]: failed to connect\n",
