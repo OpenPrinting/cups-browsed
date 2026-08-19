@@ -2888,8 +2888,8 @@ get_cluster_attributes(char* cluster_name)
       continue;
     if (!make_model_done)
     {
-      strcpy(printer_make_and_model, "Cluster ");
-      strcat(printer_make_and_model, cluster_name);
+      snprintf(printer_make_and_model, sizeof(printer_make_and_model),
+	       "Cluster %s", cluster_name);
       make_model_done = 1;
     }
     if (((attr = ippFindAttribute(p->prattrs, "color-supported",
@@ -5382,6 +5382,12 @@ get_local_queue_name(const char *service_name,
       }
     }
   }
+  // CUPS limits queue names to 127 characters (validate_name() in the CUPS
+  // scheduler requires the length to be < 128). A discovery-derived name can
+  // be longer than that, so truncate it here to a name CUPS will accept.
+  if (local_queue_name && strlen(local_queue_name) > 127)
+    local_queue_name[127] = '\0';
+
   return (local_queue_name);
 }
 
