@@ -11662,6 +11662,7 @@ read_configuration (const char *filename)
     }
     else if (!strcasecmp(line, "BrowseFilter") && value)
     {
+      filter = NULL;
       ptr = value;
       // Skip white space
       while (*ptr && isspace(*ptr))
@@ -11770,7 +11771,8 @@ read_configuration (const char *filename)
 	      !strcasecmp(line, "BrowseTimeout")) && value)
     {
       int t = atoi(value);
-      if (t >= 0)
+      // A BrowseInterval of 0 would make browse_poll() run in a busy loop
+      if (t > 0 || (t == 0 && !strcasecmp(line, "BrowseTimeout")))
       {
 	if (!strcasecmp(line, "BrowseInterval"))
 	  BrowseInterval = t;
@@ -12000,6 +12002,7 @@ read_configuration (const char *filename)
     }
     else if (!strcasecmp(line, "Cluster") && value)
     {
+      cluster = NULL;
       ptr = value;
       ptr2 = NULL;
       // Skip white space
@@ -12048,7 +12051,8 @@ read_configuration (const char *filename)
       {
 	// Only local queue name given, so assume this name as the only
 	// member name (only remote queues with this name match)
-	cupsArrayAdd(cluster->members, remove_bad_chars(ptr2, 2));
+	cupsArrayAdd(cluster->members,
+		     remove_bad_chars(cluster->local_queue_name, 2));
       }
       else
       {
