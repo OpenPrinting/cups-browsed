@@ -6328,7 +6328,8 @@ queue_overwritten (remote_printer_t *p)
 		     p->queue_name, (p->nickname ? p->nickname : "(no PPD)"),
 		     (makemodel ? makemodel :
 		      "(NickName not readable)"));
-	overwritten = 2;
+	if (overwritten == 0)
+	  overwritten = 2;
       }
     }
   }
@@ -10151,7 +10152,7 @@ resolve_callback(void* arg)
 	  if (!strncasecmp(addrstr + 4, "fe", 2) &&
 	      (addrstr[6] == '8' || addrstr[6] == '9' ||
 	       addrstr[6] == 'A' || addrstr[6] == 'B' ||
-	       addrstr[6] == 'a' || addrstr[6] == 'B'))
+	       addrstr[6] == 'a' || addrstr[6] == 'b'))
 	    // Link-local address, needs specification of interface
 	    snprintf(addrstr + addrlen + 4, 256 -
 		     addrlen - 4, "%%%s]",
@@ -11411,8 +11412,9 @@ read_browseallow_value (const char *value, allow_sense_t sense)
       if (bits > 32)
 	goto fail;
 
-      allow->mask.ipv4.sin_addr.s_addr = htonl (((0xffffffff << (32 - bits)) &
-						 0xffffffff));
+      // Shifting a 32-bit value by 32 is undefined
+      allow->mask.ipv4.sin_addr.s_addr =
+	(bits ? htonl (0xffffffffU << (32 - bits)) : 0);
     }
   }
   else if (inet_aton (value, &addr))
