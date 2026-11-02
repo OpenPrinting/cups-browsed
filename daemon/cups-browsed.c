@@ -5269,7 +5269,7 @@ get_local_queue_name(const char *service_name,
   if (!local_queue_name &&
       (!*is_cups_queue ||
        LocalQueueNamingRemoteCUPS != LOCAL_QUEUE_NAMING_DNSSD) &&
-      (is_cups_queue ||
+      (*is_cups_queue ||
        LocalQueueNamingIPPPrinter != LOCAL_QUEUE_NAMING_DNSSD))
   {
     if ((backup_queue_name = malloc((strlen(queue_name) +
