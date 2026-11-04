@@ -728,6 +728,30 @@ else
 fi
 
 #
+# The implicitclass backend must stop, not crash, when the destination
+# deposited by cups-browsed lacks the document format or resolution
+#
+
+implicitclass=$queue_prefix-implicitclass
+echo "\$ lpadmin -p $implicitclass -E -v implicitclass://$implicitclass/"
+$runcups lpadmin -p $implicitclass -E -v implicitclass://$implicitclass/
+for dest in "1 ipp://localhost/printers/x" \
+	    "1 ipp://localhost/printers/x application/pdf"; do
+    $runcups lpadmin -p $implicitclass \
+	     -o "cups-browsed-dest-printer-default='\"$dest\"'"
+    DEVICE_URI=implicitclass://$implicitclass/ \
+	      $runcups ../implicitclass 1 $user test 1 "" /dev/null 2>/dev/null
+    status=$?
+    if test $status != 4; then
+	echo "FAIL: implicitclass backend exited with status $status instead of 4 for destination \"$dest\"!"
+	clean_up 1
+	exit 1
+    fi
+done
+$runcups lpadmin -x $implicitclass
+echo ""
+
+#
 # Start some instances of ippeveprinter to emulate some IPP printers
 # to be discovered
 #
