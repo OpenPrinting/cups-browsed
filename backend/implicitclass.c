@@ -264,19 +264,16 @@ main(int  argc,				// I - Number of command-line args
 	fd = 0; // stdin
 
       // Finding the document format in which the pdftoippprinter will
-      // convert the pdf file
-      if ((ptr3 = strchr(ptr1, ' ')) != NULL)
+      // convert the pdf file, and the resolution requested for the job
+      if ((ptr3 = strchr(ptr1, ' ')) == NULL ||
+	  (ptr4 = strchr(ptr3 + 1, ' ')) == NULL)
       {
-	*ptr3 = '\0';
-	ptr3++;
+	fprintf(stderr,
+		"ERROR: Incomplete destination from cups-browsed: %s\n", ptr1);
+	return (CUPS_BACKEND_STOP);
       }
-
-      // Finding the resolution requested for the job
-      if ((ptr4 = strchr(ptr3, ' ')) != NULL)
-      {
-	*ptr4 = '\0';
-	ptr4++;
-      }
+      *ptr3++ = '\0';
+      *ptr4++ = '\0';
 
       strncpy(printer_uri, ptr1, sizeof(printer_uri) - 1);
       strncpy(document_format, ptr3, sizeof(document_format) - 1);
