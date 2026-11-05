@@ -1464,7 +1464,7 @@ add_enum_attributes(char* cluster_name,
           snprintf(str, 16, "%d", value);
           if (!cupsArrayFind(list, (void *)str))
 	  {
-            cupsArrayAdd(list, (void *)str);
+            cupsArrayAdd(list, (void *)strdup(str));
             num_value++;
           }
         }
@@ -1539,7 +1539,7 @@ add_margin_attributes(char* cluster_name,
           snprintf(str, 16, "%d", value);
           if (!cupsArrayFind(list, (void *)str))
 	  {
-            cupsArrayAdd(list, (void *)str);
+            cupsArrayAdd(list, (void *)strdup(str));
             num_value++;
           }
         }
