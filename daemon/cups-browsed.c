@@ -5926,8 +5926,8 @@ on_job_state (CupsNotifier *object,
 	  // Pick next format from attribute
           if (attr) format = ippGetString(attr, i, NULL);
           // Add format to list of supported PDLs, skip duplicates
-          if (!cupsArrayFind(pdl_list, (void *)format))
-            cupsArrayAdd(pdl_list, (void *)format);
+          if (format && !cupsArrayFind(pdl_list, (void *)format))
+            cupsArrayAdd(pdl_list, (void *)strdup(format));
           if (attr)
 	    // Next format in attribute
 	    i ++;
