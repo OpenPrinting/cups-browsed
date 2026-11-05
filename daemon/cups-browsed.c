@@ -1232,9 +1232,11 @@ add_mimetype_attributes(char *cluster_name,
 	for (i = 0; i < count; i ++)
 	{ 
 	  str = ippGetString(attr, i, NULL);
+	  if (str == NULL)
+	    continue;
 	  if (!cupsArrayFind(list, (void *)str))
 	  {
-	    cupsArrayAdd(list, (void *)str);
+	    cupsArrayAdd(list, (void *)strdup(str));
 	    num_value++;
 	  }
 	}
@@ -1320,7 +1322,7 @@ add_tagzero_attributes(char* cluster_name,
 	  // Add format to list, skip duplicates
 	  if (!cupsArrayFind(list, (void *)str))
 	  {
-	    cupsArrayAdd(list, (void *)str);
+	    cupsArrayAdd(list, (void *)strdup(str));
 	    num_value ++;
 	  }
 	}
@@ -1400,9 +1402,11 @@ add_keyword_attributes(char* cluster_name,
         for (i = 0; i < count; i++)
 	{
           str = ippGetString(attr, i, NULL);
+          if (str == NULL)
+            continue;
           if (!cupsArrayFind(list, (void *)str))
 	  {
-            cupsArrayAdd(list, (void *)str);
+            cupsArrayAdd(list, (void *)strdup(str));
             num_value ++;
           }
         }
@@ -1949,9 +1953,11 @@ add_jobpresets_attribute(char* cluster_name,
         preset = ippGetCollection(attr, i);
         preset_name = ippGetString(ippFindAttribute(preset, "preset-name",
 						    IPP_TAG_ZERO), 0, NULL);
+        if (preset_name == NULL)
+          continue;
         if (!cupsArrayFind(list, (void *)preset_name))
 	{
-          cupsArrayAdd(list, (void *)preset_name);
+          cupsArrayAdd(list, (void *)strdup(preset_name));
           num_preset++;
         }
       }
@@ -1980,9 +1986,11 @@ add_jobpresets_attribute(char* cluster_name,
         preset = ippGetCollection(attr, i);
         preset_name = ippGetString(ippFindAttribute(preset, "preset-name",
 						    IPP_TAG_ZERO), 0, NULL);
+        if (preset_name == NULL)
+          continue;
         if (!cupsArrayFind(added_presets, (void *)preset_name))
 	{
-          cupsArrayAdd(added_presets, (void *)preset_name);
+          cupsArrayAdd(added_presets, (void *)strdup(preset_name));
           ippSetCollection(*merged_attributes, &preset_attribute, i, preset);
           preset_no++;
         }
