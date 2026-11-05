@@ -2779,7 +2779,7 @@ generate_cluster_conflicts(char *cluster_name,
         strcpy(ppdsizename, size->media);
         if ((temp = strchr(ppdsizename, ' ')) != NULL)
           *temp = '\0';
-        cupsArrayAdd(pagesizes, ppdsizename);
+        cupsArrayAdd(pagesizes, strdup(ppdsizename));
       }
       cluster_options[i] = pagesizes;
 
