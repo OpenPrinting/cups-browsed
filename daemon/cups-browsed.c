@@ -10273,11 +10273,12 @@ resolve_callback(void* arg)
 					  NULL, port, rp_value,
 					  name, "", instance, type,
 					  domain, ifname,
-					  (address->proto ==
-					   AVAHI_PROTO_INET ? AF_INET :
+					  (address ?
 					   (address->proto ==
-					    AVAHI_PROTO_INET6 ?
-					    AF_INET6 : 0)),
+					    AVAHI_PROTO_INET ? AF_INET :
+					    (address->proto ==
+					     AVAHI_PROTO_INET6 ?
+					     AF_INET6 : 0)) : 0),
 					  txt);
 	pthread_rwlock_unlock(&lock);
       }
