@@ -10377,13 +10377,14 @@ resolver_wrapper(AvahiServiceResolver *r,
 
   resolver_args_t *arg = (resolver_args_t*)malloc(sizeof(resolver_args_t));
   AvahiStringList* temp_txt = NULL;
-  AvahiAddress* temp_addr = (AvahiAddress*)malloc(sizeof(AvahiAddress));
+  AvahiAddress* temp_addr = NULL;
 
   if (txt)
     temp_txt = avahi_string_list_copy(txt);
 
   if (address)
   {
+    temp_addr = (AvahiAddress*)malloc(sizeof(AvahiAddress));
     temp_addr->proto = address->proto;
     temp_addr->data = address->data;
   }
