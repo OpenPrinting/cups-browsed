@@ -2748,7 +2748,7 @@ get_cluster_sizes(char *cluster_name)
 	  if (!cupsArrayFind(sizes_ppdname, pagesize))
 	  {
 	    cupsArrayAdd(cluster_sizes, size);
-	    cupsArrayAdd(sizes_ppdname, pagesize);
+	    cupsArrayAdd(sizes_ppdname, strdup(pagesize));
 	  }
         }
       }
