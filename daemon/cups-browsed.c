@@ -11048,6 +11048,7 @@ browse_poll_create_subscription (browsepoll_t *context,
 	  !strcasecmp (ippGetName (attr), "notify-subscription-id"))
       {
 	context->subscription_id = ippGetInteger (attr, 0);
+    context->sequence_number = 0;
 	debug_printf("cups-browsed [BrowsePoll %s:%d]: subscription ID=%d\n",
 		     context->server, context->port, context->subscription_id);
 	break;
