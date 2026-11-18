@@ -4278,6 +4278,12 @@ cancel_subscription (int id)
   if (id <= 0)
     return;
 
+  if (terminating)
+  {
+    debug_printf("Skipping subscription cancel during forced shutdown.\n");
+    return;
+  }
+
   http = http_connect_local();
   if (http == NULL)
   {
@@ -8347,6 +8353,12 @@ static gboolean
 update_cups_queues(gpointer unused)
 {
 
+  if (terminating)
+  {
+    debug_printf("update_cups_queues: terminating, skipping.\n");
+    return (FALSE);
+  }
+
   pthread_rwlock_wrlock(&update_lock);
 
   remote_printer_t *p, *q;
@@ -11074,8 +11086,17 @@ static void
 browse_poll_cancel_subscription (browsepoll_t *context)
 {
   ipp_t *request, *response = NULL;
-  http_t *http = httpConnectEncryptShortTimeout (context->server, context->port,
-						 HTTP_ENCRYPTION_IF_REQUESTED);
+  http_t *http;
+
+  if (terminating)
+  {
+    debug_printf("cups-browsed [BrowsePoll %s:%d]: skipping cancel during "
+		 "forced shutdown\n", context->server, context->port);
+    return;
+  }
+
+  http = httpConnectEncryptShortTimeout (context->server, context->port,
+					 HTTP_ENCRYPTION_IF_REQUESTED);
 
   if (http == NULL)
   {
