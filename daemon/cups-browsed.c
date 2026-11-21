@@ -7339,7 +7339,7 @@ create_queue(void* arg)
   // many times due to timeouts - Skip print queue creation for this one
   if (p->timeouted >= HttpMaxRetries)
   {
-    fprintf(stderr, "Max number of retries (%d) for creating print queue %s reached, skipping it.\n",
+    fprintf(stderr, "Max number of retries (%u) for creating print queue %s reached, skipping it.\n",
 	    HttpMaxRetries, p->queue_name);
     goto end;
   }
