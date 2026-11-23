@@ -3032,13 +3032,13 @@ get_cluster_default_attributes(ipp_t** merged_attributes,
 
   // Generating the default media-col for the cluster
   if ((attr = ippFindAttribute(def_printer->prattrs, "media-col-default",
-			       IPP_TAG_BEGIN_COLLECTION)) != NULL)
+			       IPP_TAG_BEGIN_COLLECTION)) != NULL &&
+      (temp = (media_col_t *)malloc(sizeof(media_col_t))) != NULL)
   {
     media_col = ippGetCollection(attr, 0);
     media_size = ippGetCollection(ippFindAttribute(media_col, "media-size",
 						   IPP_TAG_BEGIN_COLLECTION),
 				  0);
-    temp = (media_col_t *)malloc(sizeof(media_col_t));
     temp->x = ippGetInteger(ippFindAttribute(media_size, "x-dimension",
 					     IPP_TAG_ZERO), 0);
     temp->y = ippGetInteger(ippFindAttribute(media_size, "y-dimension",
@@ -3697,6 +3697,8 @@ remove_bad_chars(const char *str_orig, // I - Original string
     return (NULL);
 
   str = strdup(str_orig);
+  if (str == NULL)
+    return (NULL);
 
   // for later str[strlen(str)-1] access
   if (strlen(str) < 1)
@@ -6786,8 +6788,8 @@ create_remote_printer_entry (const char *queue_name,
     free(p);
     return (NULL);
   }
-  if (domain != NULL && domain[0] != '\0' &&
-      type != NULL && type[0] != '\0')
+  if (domain[0] != '\0' &&
+      type[0] != '\0')
     ipp_discoveries_add(p->ipp_discoveries, interface, type, family);
 
   // Schedule for immediate creation of the CUPS queue
@@ -8655,6 +8657,12 @@ update_cups_queues(gpointer unused)
 	    break;
 
 	  create_args_t* arg = (create_args_t*)malloc(sizeof(create_args_t));
+	  if (arg == NULL)
+	  {
+	    debug_printf("Run out of memory, retrying creation of queue %s later.\n",
+			 p->queue_name);
+	    break;
+	  }
 	  arg->queue = strdup(p->queue_name);
 	  arg->uri = strdup(p->uri);
 
@@ -8680,6 +8688,8 @@ update_cups_queues(gpointer unused)
 	    {
 	      debug_printf("Could not create new thread even after many attempts for queue %s\n",
 			   p->queue_name);
+	      free(arg->queue);
+	      free(arg->uri);
 	      free(arg);
 	      p->called = 0;
 	      break;
@@ -9664,9 +9674,9 @@ examine_discovered_printer_record(const char *host,
       }
       // BrowsePoll -> DNS-SD
       else if ((p->domain == NULL || p->domain[0] == '\0') &&
-	       domain != NULL && domain[0] != '\0' &&
+	       domain[0] != '\0' &&
 	       (p->type == NULL || p->type[0] == '\0') &&
-	       type != NULL && type[0] != '\0')
+	       type[0] != '\0')
       {
 	upgrade = 1;
 	debug_printf("Discovered printer %s (Host: %s, Port: %d, URI: %s) by DNS-SD now.\n",
@@ -9678,8 +9688,8 @@ examine_discovered_printer_record(const char *host,
     if (upgrade == 1)
     {
       // Remove tiemout of legacy CUPS broadcasting
-      if (domain != NULL && domain[0] != '\0' &&
-	  type != NULL && type[0] != '\0' &&
+      if (domain[0] != '\0' &&
+	  type[0] != '\0' &&
 	  p->is_legacy)
       {
 	p->is_legacy = 0;
@@ -9817,18 +9827,18 @@ examine_discovered_printer_record(const char *host,
       free (p->resource);
       p->resource = strdup(resource);
     }
-    if (p->type[0] == '\0' && type)
+    if (p->type[0] == '\0')
     {
       free (p->type);
       p->type = strdup(type);
     }
-    if (p->domain[0] == '\0' && domain)
+    if (p->domain[0] == '\0')
     {
       free (p->domain);
       p->domain = strdup(domain);
     }
-    if (domain != NULL && domain[0] != '\0' &&
-	type != NULL && type[0] != '\0')
+    if (domain[0] != '\0' &&
+	type[0] != '\0')
       ipp_discoveries_add(p->ipp_discoveries, interface, type, family);
     p->netprinter = is_cups_queue ? 0 : 1;
   }
@@ -11397,6 +11407,8 @@ read_browseallow_value (const char *value, allow_sense_t sense)
   }
   
   allow = calloc (1, sizeof (allow_t));
+  if (allow == NULL)
+    return (1);
   allow->sense = sense;
   if (value == NULL)
     goto fail;
@@ -11404,6 +11416,8 @@ read_browseallow_value (const char *value, allow_sense_t sense)
   if (p)
   {
     char *s = strdup (value);
+    if (s == NULL)
+      goto fail;
     s[p - value] = '\0';
 
     if (!inet_aton (s, &addr))
