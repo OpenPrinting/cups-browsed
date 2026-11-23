@@ -797,6 +797,23 @@ copy_media(void *media,
 }
 
 
+static void
+free_media(void *media,
+	   void *user_data)
+{
+  media_col_t *data = (media_col_t *)media;
+
+  (void)user_data;
+
+  if (data)
+  {
+    free(data->media_source);
+    free(data->media_type);
+    free(data);
+  }
+}
+
+
 //
 // 'create_media_col()' - Create a media-col value.
 //
@@ -1776,7 +1793,7 @@ add_mediadatabase_attributes(char* cluster_name,
   media_database = cupsArrayNew3((cups_array_func_t)compare_media,
 				 NULL, NULL, 0,
 				 (cups_acopy_func_t)copy_media,
-				 (cups_afree_func_t)free);
+				 (cups_afree_func_t)free_media);
   for (attr_no = 0; attr_no < 1; attr_no ++)
   {
     num_database = 0;
@@ -1853,6 +1870,13 @@ add_mediadatabase_attributes(char* cluster_name,
             cupsArrayAdd(media_database, temp);
             num_database ++;
           }
+
+	  // The array keeps its own copy (copy_media()), so the strings
+	  // of the scratch entry are no longer needed
+	  free(temp->media_type);
+	  free(temp->media_source);
+	  temp->media_type = NULL;
+	  temp->media_source = NULL;
         }
       }
     }
@@ -2660,10 +2684,14 @@ check_printer_with_options(char* cluster_name, int idx_option1,
 	  (option2_is_size && cupsArrayFind(second_attributes_value,
 					    (void*)borderless_pagesize)))
       {
+	cupsArrayDelete(second_attributes_value);
+	cupsArrayDelete(first_attributes_value);
         free(borderless_pagesize);
         return (1);
       }
+      cupsArrayDelete(second_attributes_value);
     }
+    cupsArrayDelete(first_attributes_value);
   }
   free(borderless_pagesize);
   return (0);
