@@ -1716,7 +1716,7 @@ add_mediasize_attributes(char* cluster_name,
 		ippGetInteger(y_dim, 0);
             if (!cupsArrayFind(size_ranges, temp_range))
 	    {
-              cupsArrayAdd(size_ranges, temp_range);
+              cupsArrayAdd(size_ranges, copy_range_size(temp_range, NULL));
               num_ranges++;
             }
           }
@@ -1726,7 +1726,7 @@ add_mediasize_attributes(char* cluster_name,
             temp->y = ippGetInteger(y_dim, 0);
             if (!cupsArrayFind(sizes, temp))
 	    {
-              cupsArrayAdd(sizes, temp);
+              cupsArrayAdd(sizes, copy_media_size(temp, NULL));
               num_sizes++;
             }
           }
@@ -1867,7 +1867,7 @@ add_mediadatabase_attributes(char* cluster_name,
 
           if (!cupsArrayFind(media_database, temp))
 	  {
-            cupsArrayAdd(media_database, temp);
+            cupsArrayAdd(media_database, copy_media(temp, NULL));
             num_database ++;
           }
 
