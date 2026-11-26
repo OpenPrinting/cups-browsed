@@ -28,7 +28,7 @@
 #   build-cups-browsed   autogen + configure + make (build/link only)
 #
 # Environment knobs honoured by build-cups-browsed:
-#   CUPS_KIND   the <kind> above (controls the cups-config shim)
+#   CUPS_KIND   the <kind> above
 #   EMULATED    "1" when running under QEMU emulation
 #
 # Override knobs (optional):
@@ -107,44 +107,6 @@ cmd_deps() {
 	$SUDO apt-get remove -y cups-browsed libppd-dev libcupsfilters-dev || true
 }
 
-# Install a thin `cups-config` shim backed by pkg-config.  cups-browsed's
-# configure.ac hard-requires `cups-config`, but CUPS 2.5 (OpenPrinting/cups
-# master) has dropped it in favour of cups.pc.  --image is vestigial here
-# (cups-browsed #includes <cups/raster.h> but calls no cupsRaster* APIs, and
-# CUPS 2.5 folds the raster API into libcups), so the shim ignores it.
-install_cups_config_shim() {
-	shim=/usr/local/bin/cups-config
-	$SUDO tee "$shim" >/dev/null <<'SHIM'
-#!/bin/sh
-# Minimal cups-config shim backed by pkg-config (CUPS 2.5 dropped cups-config).
-cflags=$(pkg-config --cflags cups)
-libs=$(pkg-config --libs cups)
-ver=$(pkg-config --modversion cups)
-datadir=$(pkg-config --variable=cups_datadir cups 2>/dev/null)
-serverroot=$(pkg-config --variable=cups_serverroot cups 2>/dev/null)
-serverbin=$(pkg-config --variable=cups_serverbin cups 2>/dev/null)
-[ -n "$datadir" ] || datadir=/usr/share/cups
-[ -n "$serverroot" ] || serverroot=/etc/cups
-[ -n "$serverbin" ] || serverbin=/usr/lib/cups
-out=""
-for arg in "$@"; do
-	case "$arg" in
-		--cflags)     out="$out $cflags" ;;
-		--libs)       out="$out $libs" ;;
-		--image)      : ;;  # vestigial; folded into libcups on CUPS 2.5
-		--ldflags)    : ;;
-		--version)    out="$out $ver" ;;
-		--datadir)    out="$out $datadir" ;;
-		--serverroot) out="$out $serverroot" ;;
-		--serverbin)  out="$out $serverbin" ;;
-	esac
-done
-echo "$out"
-SHIM
-	$SUDO chmod +x "$shim"
-	echo "ci-setup: installed cups-config shim at $shim"
-}
-
 # build_autoconf <url> <ref> <submodule-flag> [configure-args...]
 build_autoconf() {
 	url="$1"; ref="$2"; sub="$3"; shift 3
@@ -172,7 +134,6 @@ cmd_cups() {
 			# default linker search path.
 			build_autoconf https://github.com/OpenPrinting/cups.git master "" \
 				--disable-systemd ${ma:+--libdir=/usr/lib/$ma}
-			install_cups_config_shim
 			;;
 		*)
 			echo "ci-setup: unknown/unsupported cups kind: $kind" >&2; exit 2 ;;
@@ -229,7 +190,7 @@ cmd_build() {
 
 	# Report which CUPS the configure step actually selected.
 	echo "ci-setup: configured against:"
-	grep -E "cups-config:|CUPS_VERSION|checking for cups" config.log 2>/dev/null | head || true
+	grep -iE "cups-config:|CUPS_VERSION|checking for cups" config.log 2>/dev/null | head || true
 }
 
 case "${1:-}" in

@@ -61,34 +61,54 @@ PKG_PROG_PKG_CONFIG([0.20])
 AM_GNU_GETTEXT_VERSION([0.18.3])
 AM_GNU_GETTEXT([external])
 
-# ================================
-# Find CUPS internals (no pc file)
-# ================================
+# =====================================
+# Find CUPS (pkg-config or cups-config)
+# =====================================
+# CUPS 2.5.x has dropped cups-config and only ships cups.pc.  The cups.pc
+# of CUPS 2.4.x and newer also provides the install locations
+# (cups_datadir, cups_serverroot, cups_serverbin), so use pkg-config first
+# and fall back to cups-config for older CUPS.  cups-config can still be
+# forced with --with-cups-config=PATH.  PKG_CONFIG_SYSROOT_DIR is cleared
+# for the install locations, as pkgconf would prefix them with the sysroot
+# when cross-compiling.
 AC_ARG_WITH([cups-config],
 	[AS_HELP_STRING([--with-cups-config=path], [Specify path to cups-config executable.])],
 	[with_cups_config="$withval"],
 	[with_cups_config=system]
 )
 
-AS_IF([test "x$with_cups_config" != "xsystem"], [
-	CUPSCONFIG=$with_cups_config
+AC_MSG_CHECKING([for CUPS 2.4.x or newer via pkg-config])
+AS_IF([test "x$with_cups_config" = "xsystem" && $PKG_CONFIG --exists 'cups >= 2.4'], [
+	CUPS_VERSION="$($PKG_CONFIG --modversion cups)"
+	AC_MSG_RESULT([yes, v$CUPS_VERSION])
+	CUPS_CFLAGS="$($PKG_CONFIG --cflags cups)"
+	CUPS_LIBS="$($PKG_CONFIG --libs cups)"
+	CUPS_DATADIR="$(PKG_CONFIG_SYSROOT_DIR= $PKG_CONFIG --variable=cups_datadir cups)"
+	CUPS_SERVERROOT="$(PKG_CONFIG_SYSROOT_DIR= $PKG_CONFIG --variable=cups_serverroot cups)"
+	CUPS_SERVERBIN="$(PKG_CONFIG_SYSROOT_DIR= $PKG_CONFIG --variable=cups_serverbin cups)"
 ], [
-	AC_PATH_TOOL(CUPSCONFIG, [cups-config])
-	AS_IF([test -z "$CUPSCONFIG"], [
-		AC_MSG_ERROR([Required cups-config is missing. Please install CUPS developer packages.])
+	AC_MSG_RESULT([no])
+	AS_IF([test "x$with_cups_config" != "xsystem"], [
+		CUPSCONFIG=$with_cups_config
+	], [
+		AC_PATH_TOOL(CUPSCONFIG, [cups-config])
+		AS_IF([test -z "$CUPSCONFIG"], [
+			AC_MSG_ERROR([Neither cups.pc (CUPS 2.4.x or newer) nor cups-config found. Please install CUPS developer packages.])
+		])
 	])
+	CUPS_CFLAGS=`$CUPSCONFIG --cflags`
+	CUPS_LIBS=`$CUPSCONFIG --image --libs`
+	CUPS_VERSION=`$CUPSCONFIG --version`
+	CUPS_DATADIR="`$CUPSCONFIG --datadir`"
+	CUPS_SERVERROOT="`$CUPSCONFIG --serverroot`"
+	CUPS_SERVERBIN="`$CUPSCONFIG --serverbin`"
 ])
-CUPS_CFLAGS=`$CUPSCONFIG --cflags`
-CUPS_LIBS=`$CUPSCONFIG --image --libs`
-CUPS_VERSION=`$CUPSCONFIG --version`
 AC_SUBST(CUPS_CFLAGS)
 AC_SUBST(CUPS_LIBS)
 
-CUPS_DATADIR="`$CUPSCONFIG --datadir`"
 AC_DEFINE_UNQUOTED(CUPS_DATADIR, "$CUPS_DATADIR", [CUPS datadir])
 AC_SUBST(CUPS_DATADIR)
 
-CUPS_SERVERROOT="`$CUPSCONFIG --serverroot`"
 AC_DEFINE_UNQUOTED(CUPS_SERVERROOT, "$CUPS_SERVERROOT", [CUPS serverroot])
 AC_SUBST(CUPS_SERVERROOT)
 
@@ -96,7 +116,6 @@ CUPS_FONTPATH="$CUPS_DATADIR/fonts"
 AC_DEFINE_UNQUOTED(CUPS_FONTPATH, "$CUPS_FONTPATH", [Path to CUPS fonts dir])
 AC_SUBST(CUPS_FONTPATH)
 
-CUPS_SERVERBIN="`$CUPSCONFIG --serverbin`"
 AC_DEFINE_UNQUOTED(CUPS_SERVERBIN, "$CUPS_SERVERBIN", [Path to CUPS binaries dir])
 AC_SUBST(CUPS_SERVERBIN)
 
