@@ -1236,7 +1236,7 @@ add_mimetype_attributes(char *cluster_name,
 	    continue;
 	  if (!cupsArrayFind(list, (void *)str))
 	  {
-	    cupsArrayAdd(list, (void *)strdup(str));
+	    cupsArrayAdd(list, (void *)str);
 	    num_value++;
 	  }
 	}
@@ -1322,7 +1322,7 @@ add_tagzero_attributes(char* cluster_name,
 	  // Add format to list, skip duplicates
 	  if (!cupsArrayFind(list, (void *)str))
 	  {
-	    cupsArrayAdd(list, (void *)strdup(str));
+	    cupsArrayAdd(list, (void *)str);
 	    num_value ++;
 	  }
 	}
@@ -1406,7 +1406,7 @@ add_keyword_attributes(char* cluster_name,
             continue;
           if (!cupsArrayFind(list, (void *)str))
 	  {
-            cupsArrayAdd(list, (void *)strdup(str));
+            cupsArrayAdd(list, (void *)str);
             num_value ++;
           }
         }
@@ -1485,7 +1485,7 @@ add_enum_attributes(char* cluster_name,
           snprintf(str, 16, "%d", value);
           if (!cupsArrayFind(list, (void *)str))
 	  {
-            cupsArrayAdd(list, (void *)strdup(str));
+            cupsArrayAdd(list, (void *)str);
             num_value++;
           }
         }
@@ -1560,7 +1560,7 @@ add_margin_attributes(char* cluster_name,
           snprintf(str, 16, "%d", value);
           if (!cupsArrayFind(list, (void *)str))
 	  {
-            cupsArrayAdd(list, (void *)strdup(str));
+            cupsArrayAdd(list, (void *)str);
             num_value++;
           }
         }
@@ -1720,7 +1720,7 @@ add_mediasize_attributes(char* cluster_name,
 		ippGetInteger(y_dim, 0);
             if (!cupsArrayFind(size_ranges, temp_range))
 	    {
-              cupsArrayAdd(size_ranges, copy_range_size(temp_range, NULL));
+              cupsArrayAdd(size_ranges, temp_range);
               num_ranges++;
             }
           }
@@ -1730,7 +1730,7 @@ add_mediasize_attributes(char* cluster_name,
             temp->y = ippGetInteger(y_dim, 0);
             if (!cupsArrayFind(sizes, temp))
 	    {
-              cupsArrayAdd(sizes, copy_media_size(temp, NULL));
+              cupsArrayAdd(sizes, temp);
               num_sizes++;
             }
           }
@@ -1871,7 +1871,7 @@ add_mediadatabase_attributes(char* cluster_name,
 
           if (!cupsArrayFind(media_database, temp))
 	  {
-            cupsArrayAdd(media_database, copy_media(temp, NULL));
+            cupsArrayAdd(media_database, temp);
             num_database ++;
           }
 
@@ -1957,7 +1957,7 @@ add_jobpresets_attribute(char* cluster_name,
           continue;
         if (!cupsArrayFind(list, (void *)preset_name))
 	{
-          cupsArrayAdd(list, (void *)strdup(preset_name));
+          cupsArrayAdd(list, (void *)preset_name);
           num_preset++;
         }
       }
@@ -1990,7 +1990,7 @@ add_jobpresets_attribute(char* cluster_name,
           continue;
         if (!cupsArrayFind(added_presets, (void *)preset_name))
 	{
-          cupsArrayAdd(added_presets, (void *)strdup(preset_name));
+          cupsArrayAdd(added_presets, (void *)preset_name);
           ippSetCollection(*merged_attributes, &preset_attribute, i, preset);
           preset_no++;
         }
@@ -2748,7 +2748,7 @@ get_cluster_sizes(char *cluster_name)
 	  if (!cupsArrayFind(sizes_ppdname, pagesize))
 	  {
 	    cupsArrayAdd(cluster_sizes, size);
-	    cupsArrayAdd(sizes_ppdname, strdup(pagesize));
+	    cupsArrayAdd(sizes_ppdname, pagesize);
 	  }
         }
       }
@@ -2815,7 +2815,7 @@ generate_cluster_conflicts(char *cluster_name,
         strcpy(ppdsizename, size->media);
         if ((temp = strchr(ppdsizename, ' ')) != NULL)
           *temp = '\0';
-        cupsArrayAdd(pagesizes, strdup(ppdsizename));
+        cupsArrayAdd(pagesizes, ppdsizename);
       }
       cluster_options[i] = pagesizes;
 
@@ -5971,7 +5971,7 @@ on_job_state (CupsNotifier *object,
           if (attr) format = ippGetString(attr, i, NULL);
           // Add format to list of supported PDLs, skip duplicates
           if (format && !cupsArrayFind(pdl_list, (void *)format))
-            cupsArrayAdd(pdl_list, (void *)strdup(format));
+            cupsArrayAdd(pdl_list, (void *)format);
           if (attr)
 	    // Next format in attribute
 	    i ++;
