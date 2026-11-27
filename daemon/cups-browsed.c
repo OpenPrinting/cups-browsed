@@ -10380,15 +10380,22 @@ resolver_wrapper(AvahiServiceResolver *r,
   AvahiStringList* temp_txt = NULL;
   AvahiAddress* temp_addr = NULL;
 
-  if (txt)
-    temp_txt = avahi_string_list_copy(txt);
+  if (!arg)
+    return;
 
   if (address)
   {
     temp_addr = (AvahiAddress*)malloc(sizeof(AvahiAddress));
-    temp_addr->proto = address->proto;
-    temp_addr->data = address->data;
+    if (!temp_addr)
+    {
+      free(arg);
+      return;
+    }
+    *temp_addr = *address;
   }
+
+  if (txt)
+    temp_txt = avahi_string_list_copy(txt);
 
   arg->interface = interface;
   arg->protocol = protocol;
